@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { Providers } from "@/app/providers";
 import "./globals.css";
 
 const notoSans = Noto_Sans({
@@ -27,7 +28,9 @@ export default function RootLayout({
     <html lang="mk" className={`${notoSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-slate-50 font-sans text-slate-900">
         <SiteHeader />
-        <div className="flex-1">{children}</div>
+        <Providers>
+          <div className="flex-1">{children}</div>
+        </Providers>
         <SiteFooter />
       </body>
     </html>

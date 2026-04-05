@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { StripeCheckoutButton } from "@/components/StripeCheckoutButton";
+import { isStripeConfigured } from "@/lib/stripe";
+import { STRIPE_PACKAGE_KEYS, STRIPE_PACKAGES } from "@/lib/listing-packages";
 
 export const metadata: Metadata = {
   title: "Пакети за листање",
@@ -24,48 +27,9 @@ const freeLimits = [
   "Нема линк кон веб-страница",
 ];
 
-const premium = [
-  {
-    id: "3m",
-    badge: "🥉 3 месеци",
-    price: "399",
-    monthly: "≈ 133 ден / месец",
-    features: [
-      "5 слики",
-      "Линк до веб-страница",
-      "Google Maps",
-      "2 категории",
-    ],
-  },
-  {
-    id: "6m",
-    badge: "6 месеци",
-    price: "699",
-    monthly: "≈ 116 ден / месец",
-    features: [
-      "10 слики",
-      "3 категории",
-      "Подобра позиција во пребарување",
-      "Функции од пократките пакети каде што важи",
-    ],
-  },
-  {
-    id: "12m",
-    badge: "12 месеци — НАЈПОПУЛАРЕН",
-    price: "999",
-    monthly: "≈ 83 ден / месец",
-    popular: true,
-    features: [
-      "Неограничени слики",
-      "5 категории",
-      "Истакнат профил",
-      "Verified значка",
-      "Приоритет во резултати",
-    ],
-  },
-];
-
 export default function PackagesPage() {
+  const stripeOn = isStripeConfigured();
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <nav className="text-sm text-slate-500">
@@ -83,7 +47,7 @@ export default function PackagesPage() {
         <p className="mt-3 text-slate-600">
           Секој бизнис може бесплатно да се појави. Премиум пакетите додаваат
           видливост, побогат профил и подобро место во пребарувањето — цените се
-          во денари (MKD).
+          во денари (MKD). Плаќање со картичка преку Stripe.
         </p>
       </header>
 
@@ -130,49 +94,60 @@ export default function PackagesPage() {
           <h2 className="text-lg font-semibold text-slate-900">
             Премиум пакети
           </h2>
-          {premium.map((p) => (
-            <section
-              key={p.id}
-              className={`rounded-2xl border p-8 shadow-sm ${
-                p.popular
-                  ? "border-emerald-400 bg-emerald-50/50 ring-2 ring-emerald-200"
-                  : "border-slate-200 bg-white"
-              }`}
-            >
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {p.badge}
-                </h3>
-                {p.popular ? (
-                  <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-xs font-semibold text-white">
-                    Најдобра вредност
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-2 text-3xl font-bold text-slate-900">
-                {p.price}{" "}
-                <span className="text-lg font-normal text-slate-600">ден</span>
-              </p>
-              <p className="text-sm text-slate-600">{p.monthly}</p>
-              <ul className="mt-6 space-y-2 text-slate-700">
-                {p.features.map((f) => (
-                  <li key={f} className="flex gap-2">
-                    <span className="text-emerald-600">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          {STRIPE_PACKAGE_KEYS.map((key) => {
+            const p = STRIPE_PACKAGES[key];
+            return (
+              <section
+                key={key}
+                className={`rounded-2xl border p-8 shadow-sm ${
+                  p.popular
+                    ? "border-emerald-400 bg-emerald-50/50 ring-2 ring-emerald-200"
+                    : "border-slate-200 bg-white"
+                }`}
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {p.badge}
+                  </h3>
+                  {p.popular ? (
+                    <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-xs font-semibold text-white">
+                      Најдобра вредност
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {p.amountMkd}{" "}
+                  <span className="text-lg font-normal text-slate-600">ден</span>
+                </p>
+                <p className="text-sm text-slate-600">{p.monthlyHint}</p>
+                <ul className="mt-6 space-y-2 text-slate-700">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex gap-2">
+                      <span className="text-emerald-600">✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6">
+                  <StripeCheckoutButton packageKey={key} disabled={!stripeOn}>
+                    Плати со Stripe — {p.amountMkd} ден
+                  </StripeCheckoutButton>
+                </div>
+              </section>
+            );
+          })}
           <Link
             href="/dodaj-biznis"
             className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-emerald-700 px-6 text-sm font-semibold text-white hover:bg-emerald-800 lg:w-auto"
           >
-            Додај бизнис — пакетот при плаќање
+            Додај бизнис — избери пакет во формата
           </Link>
           <p className="text-xs text-slate-500">
-            Плаќањето може да се поврзе со доставувач на картички или локален
-            начин на плаќање кога ќе биде подготвена интеграцијата.
+            По успешно плаќање отвори{" "}
+            <Link href="/dodaj-biznis" className="underline">
+              Додај бизнис
+            </Link>{" "}
+            и избери го истиот премиум пакет.
           </p>
         </div>
       </div>

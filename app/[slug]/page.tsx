@@ -4,10 +4,11 @@ import type { Metadata } from "next";
 import { BusinessCard } from "@/components/BusinessCard";
 import { CATEGORY_BY_SLUG, MAIN_CATEGORIES } from "@/data/categories";
 import {
-  businessesInCategory,
-  filterBusinesses,
-  uniqueCities,
-} from "@/data/businesses";
+  filterBusinessesInCategory,
+  getCityFilterGroups,
+} from "@/lib/business-queries";
+
+export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -49,18 +50,16 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const priceTier =
     sp.price && sp.price !== "" ? Number(sp.price) : 0;
 
-  const base = businessesInCategory(slug);
-  const filtered = filterBusinesses(base, {
+  const filtered = await filterBusinessesInCategory(slug, {
     subcategorySlug: sub === "all" ? undefined : sub,
     city: city === "all" ? undefined : city,
     minRating: minRating > 0 ? minRating : undefined,
     priceTier: priceTier >= 1 && priceTier <= 3 ? priceTier : undefined,
   });
 
-  const cities = uniqueCities();
+  const cityGroups = await getCityFilterGroups();
 
-  const listingWord =
-    filtered.length === 1 ? "оглас" : "огласи";
+  const listingWord = filtered.length === 1 ? "оглас" : "огласи";
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -136,10 +135,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
             <option value="all">Сите градови</option>
-            {cities.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+            {cityGroups.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.cities.map((c) => (
+                  <option key={`${g.label}-${c}`} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>

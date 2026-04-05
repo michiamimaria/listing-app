@@ -11,7 +11,9 @@ import {
   popularBusinesses,
   searchAllBusinesses,
   topRatedBusinesses,
-} from "@/data/businesses";
+} from "@/lib/business-queries";
+
+export const dynamic = "force-dynamic";
 
 type Props = {
   searchParams: Promise<{ q?: string }>;
@@ -20,11 +22,15 @@ type Props = {
 export default async function Home({ searchParams }: Props) {
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
-  const searchResults = query ? searchAllBusinesses(query) : [];
+  const searchResults = query ? await searchAllBusinesses(query) : [];
 
   const homepageCategories = HOMEPAGE_CATEGORY_SLUGS.map((slug) =>
     MAIN_CATEGORIES.find((c) => c.slug === slug)
   ).filter(Boolean) as typeof MAIN_CATEGORIES;
+
+  const popular = await popularBusinesses();
+  const newest = await newBusinesses();
+  const topRated = await topRatedBusinesses();
 
   return (
     <main>
@@ -124,7 +130,7 @@ export default async function Home({ searchParams }: Props) {
             </h2>
           </div>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {popularBusinesses().map((b) => (
+            {popular.map((b) => (
               <li key={b.id}>
                 <BusinessCard business={b} />
               </li>
@@ -137,8 +143,8 @@ export default async function Home({ searchParams }: Props) {
             Нови бизниси
           </h2>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {newBusinesses().length ? (
-              newBusinesses().map((b) => (
+            {newest.length ? (
+              newest.map((b) => (
                 <li key={b.id}>
                   <BusinessCard business={b} />
                 </li>
@@ -156,7 +162,7 @@ export default async function Home({ searchParams }: Props) {
             Најдобро оценети бизниси
           </h2>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {topRatedBusinesses().map((b) => (
+            {topRated.map((b) => (
               <li key={b.id}>
                 <BusinessCard business={b} />
               </li>

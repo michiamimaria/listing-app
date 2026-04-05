@@ -63,11 +63,17 @@ export function BusinessCard({ business, categoryHref }: Props) {
           <span className="text-amber-500" aria-hidden>
             ★
           </span>
-          <span className="font-medium text-slate-800">{business.rating}</span>
-          <span className="text-slate-400">
-            ({business.reviewCount}{" "}
-            {business.reviewCount === 1 ? "рецензија" : "рецензии"})
-          </span>
+          {business.rating > 0 ? (
+            <>
+              <span className="font-medium text-slate-800">{business.rating}</span>
+              <span className="text-slate-400">
+                ({business.reviewCount}{" "}
+                {business.reviewCount === 1 ? "рецензија" : "рецензии"})
+              </span>
+            </>
+          ) : (
+            <span className="text-slate-400">Сè уште без оцени</span>
+          )}
         </span>
         <span>{business.city}</span>
         <span className="text-slate-400">
