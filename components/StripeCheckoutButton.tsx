@@ -5,8 +5,10 @@ import { useState } from "react";
 type Props = {
   packageKey: "premium3" | "premium6" | "premium12";
   className?: string;
-  /** Кога Stripe не е конфигуриран на серверот */
+  /** When card checkout is not available on the server. */
   disabled?: boolean;
+  /** Which page to use for cancel return URL. */
+  checkoutFrom?: "paketi" | "dodaj-biznis";
   children: React.ReactNode;
 };
 
@@ -14,6 +16,7 @@ export function StripeCheckoutButton({
   packageKey,
   className,
   disabled: disabledProp,
+  checkoutFrom = "paketi",
   children,
 }: Props) {
   const [loading, setLoading] = useState(false);
@@ -27,7 +30,7 @@ export function StripeCheckoutButton({
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packageKey }),
+        body: JSON.stringify({ packageKey, from: checkoutFrom }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok) {
@@ -35,10 +38,14 @@ export function StripeCheckoutButton({
         return;
       }
       if (data.url) {
-        window.location.href = data.url;
+        const u = data.url;
+        window.location.href =
+          u.startsWith("/") && !u.startsWith("//")
+            ? `${window.location.origin}${u}`
+            : u;
         return;
       }
-      setErr("Нема линк од Stripe");
+      setErr("Серверот не врати линк за плаќање.");
     } catch {
       setErr("Мрежна грешка");
     } finally {
@@ -57,7 +64,7 @@ export function StripeCheckoutButton({
           "inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#635BFF] px-6 text-sm font-semibold text-white hover:bg-[#544bdb] disabled:opacity-60"
         }
       >
-        {loading ? "Се отвора Stripe…" : children}
+        {loading ? "Се отвора страницата…" : children}
       </button>
       {err ? (
         <p className="mt-2 text-sm text-red-600" role="alert">

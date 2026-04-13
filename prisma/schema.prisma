@@ -50,6 +50,8 @@ model Listing {
   priceTier       Int      @default(1)
   imageCount      Int      @default(0)
   featured        Boolean  @default(false)
+  /// За listingPackage=free: крај на бесплатниот месец; по истекот огласот не се прикажува додека нема премиум.
+  freeUntil       DateTime?
   createdAt       DateTime @default(now())
 
   @@index([categorySlug])

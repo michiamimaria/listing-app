@@ -6,7 +6,7 @@ import { recordPaymentFromCheckoutSession } from "@/lib/payment-service";
 
 export async function POST(req: Request) {
   if (!hasStripeSecretKey()) {
-    return NextResponse.json({ error: "Stripe off" }, { status: 503 });
+    return NextResponse.json({ error: "Webhook не е активен" }, { status: 503 });
   }
 
   const whSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();

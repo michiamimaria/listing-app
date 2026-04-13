@@ -10,7 +10,7 @@ function isPlaceholderStripeKey(key: string): boolean {
   return false;
 }
 
-/** Вистински изгледачки Stripe secret (не празно и не од .env.example). */
+/** Валиден таен клуч за платежниот провајдер (не празно и не од .env.example). */
 export function hasStripeSecretKey(): boolean {
   const key = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
   if (!key) return false;
@@ -19,16 +19,24 @@ export function hasStripeSecretKey(): boolean {
   return true;
 }
 
-/** Само development: симулирано плаќање без Stripe API (никогаш во production). */
+/** Само development: симулирано плаќање без повик кон надворешен платежен API (никогаш во production). */
 export function isDevStripeMock(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
   const v = process.env.STRIPE_DEV_MOCK?.toLowerCase().trim();
   return v === "true" || v === "1" || v === "yes";
 }
 
-/** UI / checkout: вистински Stripe или dev mock. */
+/** UI / checkout: вистинска сесија или dev mock. */
 export function isStripeConfigured(): boolean {
   return hasStripeSecretKey() || isDevStripeMock();
+}
+
+/**
+ * Development: плаќањето се „зачувува“ без страница за картичка.
+ * За вистинска картичка: валиден таен клуч во .env и исклучи dev mock.
+ */
+export function isCardlessDevPaymentMode(): boolean {
+  return isDevStripeMock() && !hasStripeSecretKey();
 }
 
 export function getStripe(): Stripe {

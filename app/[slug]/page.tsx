@@ -62,7 +62,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const listingWord = filtered.length === 1 ? "оглас" : "огласи";
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-6xl px-3 py-8 sm:px-6 sm:py-10">
       <nav className="text-sm text-slate-500">
         <Link href="/" className="hover:text-emerald-700">
           Почетна
@@ -71,28 +71,28 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <span className="text-slate-800">{category.name}</span>
       </nav>
 
-      <header className="mt-4 border-b border-slate-200 pb-8">
-        <p className="text-4xl" aria-hidden>
+      <header className="mt-4 border-b border-slate-200 pb-6 sm:pb-8">
+        <p className="text-3xl sm:text-4xl" aria-hidden>
           {category.emoji}
         </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
+        <h1 className="mt-2 break-words text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
           {category.name}
         </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">
           Огласи во оваа категорија. Користи филтри за град, минимална оцена и
           ниво на цена. Пример на адреса:{" "}
-          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-sm">
+          <code className="break-all rounded bg-slate-100 px-1.5 py-0.5 text-xs sm:text-sm">
             listaj.mk/{slug}
           </code>
         </p>
       </header>
 
-      <div className="mt-8">
+      <div className="mt-8 min-w-0">
         <h2 className="text-sm font-medium text-slate-700">Подкатегории</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex max-w-full gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
           <Link
             href={`/${slug}`}
-            className={`rounded-full px-3 py-1 text-sm font-medium ${
+            className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
               sub === "all"
                 ? "bg-emerald-700 text-white"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -104,7 +104,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             <Link
               key={s.slug}
               href={`/${slug}?sub=${encodeURIComponent(s.slug)}`}
-              className={`rounded-full px-3 py-1 text-sm font-medium ${
+              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap ${
                 sub === s.slug
                   ? "bg-emerald-700 text-white"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -117,7 +117,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       </div>
 
       <form
-        className="mt-10 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4"
+        className="mt-8 grid min-w-0 gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mt-10 sm:grid-cols-2 sm:p-5 lg:grid-cols-4"
         method="get"
         role="search"
       >

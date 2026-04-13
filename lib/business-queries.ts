@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { listingToBusiness } from "@/lib/listing-mapper";
+import { publiclyVisibleListingWhere } from "@/lib/listing-visibility";
 import { MAIN_CATEGORIES } from "@/data/categories";
 import { filterBusinesses } from "@/data/businesses";
 import {
@@ -10,6 +11,7 @@ import type { Business } from "@/types/business";
 
 export async function getAllBusinesses(): Promise<Business[]> {
   const rows = await prisma.listing.findMany({
+    where: publiclyVisibleListingWhere(),
     orderBy: { createdAt: "desc" },
   });
   return rows.map(listingToBusiness);
@@ -19,7 +21,7 @@ export async function businessesInCategory(
   categorySlug: string
 ): Promise<Business[]> {
   const rows = await prisma.listing.findMany({
-    where: { categorySlug },
+    where: { AND: [{ categorySlug }, publiclyVisibleListingWhere()] },
     orderBy: { createdAt: "desc" },
   });
   return rows.map(listingToBusiness);
@@ -57,6 +59,7 @@ export async function searchAllBusinesses(query: string): Promise<Business[]> {
 
 export async function popularBusinesses(): Promise<Business[]> {
   const rows = await prisma.listing.findMany({
+    where: publiclyVisibleListingWhere(),
     orderBy: [{ reviewCount: "desc" }, { createdAt: "desc" }],
     take: 6,
   });
@@ -65,6 +68,7 @@ export async function popularBusinesses(): Promise<Business[]> {
 
 export async function newBusinesses(): Promise<Business[]> {
   const rows = await prisma.listing.findMany({
+    where: publiclyVisibleListingWhere(),
     orderBy: { createdAt: "desc" },
     take: 24,
   });
@@ -74,6 +78,7 @@ export async function newBusinesses(): Promise<Business[]> {
 
 export async function topRatedBusinesses(): Promise<Business[]> {
   const rows = await prisma.listing.findMany({
+    where: publiclyVisibleListingWhere(),
     orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
     take: 6,
   });
@@ -83,6 +88,7 @@ export async function topRatedBusinesses(): Promise<Business[]> {
 /** Групи за филтер/форма: МК + свет + евентуални градови само од база. */
 export async function getCityFilterGroups(): Promise<CitySelectGroup[]> {
   const rows = await prisma.listing.findMany({
+    where: publiclyVisibleListingWhere(),
     select: { city: true },
   });
   const dbCities = rows.map((r) => r.city);

@@ -53,7 +53,7 @@ function LoginForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
       >
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-slate-700">
@@ -65,7 +65,7 @@ function LoginForm() {
             type="email"
             required
             autoComplete="email"
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm sm:min-h-0"
           />
         </div>
         <div>
@@ -78,13 +78,13 @@ function LoginForm() {
             type="password"
             required
             autoComplete="current-password"
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm sm:min-h-0"
           />
         </div>
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+          className="min-h-[44px] w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 sm:min-h-0"
         >
           {pending ? "Се најавувам…" : "Најави се"}
         </button>
@@ -95,7 +95,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto max-w-md px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-md px-3 py-8 sm:px-6 sm:py-10">
       <nav className="text-sm text-slate-500">
         <Link href="/" className="hover:text-emerald-700">
           Почетна

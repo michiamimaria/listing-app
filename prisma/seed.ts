@@ -6,6 +6,12 @@ const prisma = new PrismaClient();
 const now = Date.now();
 const days = (n: number) => new Date(now - n * 24 * 60 * 60 * 1000);
 
+function addMonthsFrom(d: Date, months: number): Date {
+  const x = new Date(d.getTime());
+  x.setMonth(x.getMonth() + months);
+  return x;
+}
+
 async function main() {
   await prisma.listing.deleteMany();
   await prisma.user.deleteMany();
@@ -55,7 +61,8 @@ async function main() {
         listingPackage: "free",
         imageCount: 1,
         featured: false,
-        createdAt: days(90),
+        createdAt: days(10),
+        freeUntil: addMonthsFrom(days(10), 1),
       },
       {
         userId: uid,
@@ -70,7 +77,7 @@ async function main() {
         reviewCount: 33,
         priceTier: 3,
         listingPackage: "premium6",
-        imageCount: 6,
+        imageCount: 5,
         featured: false,
         createdAt: days(3),
       },
@@ -86,7 +93,7 @@ async function main() {
         reviewCount: 210,
         priceTier: 1,
         listingPackage: "premium3",
-        imageCount: 4,
+        imageCount: 3,
         featured: false,
         createdAt: days(45),
       },
@@ -103,7 +110,7 @@ async function main() {
         reviewCount: 42,
         priceTier: 3,
         listingPackage: "premium12",
-        imageCount: 12,
+        imageCount: 10,
         featured: true,
         createdAt: days(120),
       },
@@ -119,7 +126,7 @@ async function main() {
         reviewCount: 189,
         priceTier: 2,
         listingPackage: "premium6",
-        imageCount: 10,
+        imageCount: 5,
         featured: false,
         createdAt: days(30),
       },
@@ -155,6 +162,7 @@ async function main() {
         imageCount: 1,
         featured: false,
         createdAt: days(100),
+        freeUntil: addMonthsFrom(days(100), 1),
       },
     ],
   });

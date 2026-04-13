@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -9,6 +9,12 @@ const notoSans = Noto_Sans({
   variable: "--font-noto",
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#f8fafc",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -26,10 +32,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="mk" className={`${notoSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-slate-50 font-sans text-slate-900">
+      <body className="flex min-h-full min-w-0 flex-col bg-slate-50 font-sans text-slate-900">
         <SiteHeader />
         <Providers>
-          <div className="flex-1">{children}</div>
+          <div className="min-w-0 flex-1 overflow-x-hidden">{children}</div>
         </Providers>
         <SiteFooter />
       </body>

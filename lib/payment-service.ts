@@ -14,7 +14,7 @@ function addMonths(d: Date, months: number): Date {
   return x;
 }
 
-/** Идемпотентно: зачувува плаќање од Stripe Checkout сесија. */
+/** Идемпотентно: зачувување од сесија за плаќање со картичка. */
 export async function recordPaymentFromCheckoutSession(sessionId: string) {
   if (!hasStripeSecretKey()) return null;
   const stripe = getStripe();
@@ -44,7 +44,7 @@ export async function recordPaymentFromCheckoutSession(sessionId: string) {
   });
 }
 
-/** Development: зачувува плаќање без Stripe (STRIPE_DEV_MOCK). */
+/** Development: зачувува плаќање без вистинска картичка (mock). */
 export async function recordDevMockPayment(
   userId: string,
   packageKey: StripePackageKey
@@ -61,6 +61,27 @@ export async function recordDevMockPayment(
       validUntil,
     },
   });
+}
+
+const PREMIUM_KEY_ORDER: StripePackageKey[] = [
+  "premium12",
+  "premium6",
+  "premium3",
+];
+
+export async function getActivePremiumPackageKeys(
+  userId: string
+): Promise<StripePackageKey[]> {
+  const now = new Date();
+  const rows = await prisma.payment.findMany({
+    where: { userId, validUntil: { gte: now } },
+    select: { packageKey: true },
+  });
+  const set = new Set<StripePackageKey>();
+  for (const r of rows) {
+    if (isStripePackageKey(r.packageKey)) set.add(r.packageKey);
+  }
+  return PREMIUM_KEY_ORDER.filter((k) => set.has(k));
 }
 
 /** Дали корисникот има активно (неистечено) плаќање за конкретен премиум пакет. */

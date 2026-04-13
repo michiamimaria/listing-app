@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function AllCategoriesPage() {
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-6xl px-3 py-8 sm:px-6 sm:py-10">
       <nav className="text-sm text-slate-500">
         <Link href="/" className="hover:text-emerald-700">
           Почетна
@@ -19,14 +19,14 @@ export default function AllCategoriesPage() {
         <span className="mx-2">/</span>
         <span className="text-slate-800">Сите категории</span>
       </nav>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900">
+      <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
         Сите категории
       </h1>
-      <p className="mt-2 max-w-2xl text-slate-600">
+      <p className="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">
         Секоја категорија има подкатегории (на пр. автомеханичари, вулканизери)
         и филтри по град, оцена и цена.
       </p>
-      <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid min-w-0 gap-3 sm:mt-10 sm:grid-cols-2 lg:grid-cols-3">
         {MAIN_CATEGORIES.map((c) => (
           <CategoryTile
             key={c.slug}

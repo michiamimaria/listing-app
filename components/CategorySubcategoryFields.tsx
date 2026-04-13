@@ -9,15 +9,23 @@ export type CategoryOption = {
   subcategories: { slug: string; name: string }[];
 };
 
-type Props = { categories: CategoryOption[] };
+type Props = {
+  categories: CategoryOption[];
+  defaultCategorySlug?: string;
+  defaultSubcategorySlug?: string;
+};
 
-export function CategorySubcategoryFields({ categories }: Props) {
-  const [catSlug, setCatSlug] = useState("");
+export function CategorySubcategoryFields({
+  categories,
+  defaultCategorySlug = "",
+  defaultSubcategorySlug = "",
+}: Props) {
+  const [catSlug, setCatSlug] = useState(defaultCategorySlug);
   const subs = useMemo(
     () => categories.find((c) => c.slug === catSlug)?.subcategories ?? [],
     [categories, catSlug]
   );
-  const [subSlug, setSubSlug] = useState("");
+  const [subSlug, setSubSlug] = useState(defaultSubcategorySlug);
 
   useEffect(() => {
     if (!catSlug) {
@@ -51,7 +59,7 @@ export function CategorySubcategoryFields({ categories }: Props) {
             setCatSlug(e.target.value);
             setSubSlug("");
           }}
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          className="mt-1 min-h-[44px] w-full min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-sm sm:min-h-0"
         >
           <option value="" disabled>
             Избери категорија
@@ -78,7 +86,7 @@ export function CategorySubcategoryFields({ categories }: Props) {
           value={subSlug}
           onChange={(e) => setSubSlug(e.target.value)}
           disabled={!catSlug || subs.length === 0}
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-100"
+          className="mt-1 min-h-[44px] w-full min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-100 sm:min-h-0"
         >
           {!catSlug ? (
             <option value="">Прво избери категорија</option>

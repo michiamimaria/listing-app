@@ -1,38 +1,24 @@
 "use server";
 
+import "server-only";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_BY_SLUG } from "@/data/categories";
+import { maxDescriptionCharsForPackage } from "@/lib/listing-constants";
+import {
+  maxImagesForPackage,
+  parseListingPackage,
+} from "@/lib/listing-packages";
 import { userHasActivePremiumForPackage } from "@/lib/payment-service";
 import type { ListingPackage } from "@/types/business";
 
-function parseListingPackage(v: string): ListingPackage | null {
-  if (
-    v === "free" ||
-    v === "premium3" ||
-    v === "premium6" ||
-    v === "premium12"
-  ) {
-    return v;
-  }
-  return null;
-}
-
-function maxImagesForPackage(pkg: ListingPackage): number {
-  switch (pkg) {
-    case "free":
-      return 1;
-    case "premium3":
-      return 5;
-    case "premium6":
-      return 10;
-    case "premium12":
-      return 99;
-    default:
-      return 0;
-  }
+function addOneMonth(from: Date): Date {
+  const d = new Date(from);
+  d.setMonth(d.getMonth() + 1);
+  return d;
 }
 
 function priceTierForPackage(pkg: ListingPackage): number {
@@ -67,6 +53,11 @@ export async function submitListingForm(formData: FormData) {
   const listingPackage = parseListingPackage(listingPackageRaw);
   if (!listingPackage) {
     redirect("/dodaj-biznis?err=package");
+  }
+
+  const descMax = maxDescriptionCharsForPackage(listingPackage);
+  if (description.length > descMax) {
+    redirect("/dodaj-biznis?err=desc");
   }
 
   const cat = CATEGORY_BY_SLUG.get(categorySlug);
@@ -105,6 +96,9 @@ export async function submitListingForm(formData: FormData) {
 
   const priceTier = priceTierForPackage(listingPackage);
   const featured = listingPackage === "premium12";
+  const now = new Date();
+  const freeUntil =
+    listingPackage === "free" ? addOneMonth(now) : null;
 
   try {
     await prisma.listing.create({
@@ -123,6 +117,7 @@ export async function submitListingForm(formData: FormData) {
         priceTier,
         imageCount,
         featured,
+        freeUntil,
       },
     });
     revalidatePath("/");
@@ -133,4 +128,136 @@ export async function submitListingForm(formData: FormData) {
   }
 
   redirect("/dodaj-biznis?ok=1");
+}
+
+export async function updateListingForm(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect(`/prijava?callbackUrl=${encodeURIComponent("/moi-oglasi")}`);
+  }
+
+  const listingId = String(formData.get("listingId") ?? "").trim();
+  if (!listingId) {
+    redirect("/moi-oglasi?err=missing");
+  }
+
+  const existing = await prisma.listing.findFirst({
+    where: { id: listingId, userId: session.user.id },
+  });
+  if (!existing) {
+    redirect("/moi-oglasi?err=notfound");
+  }
+
+  const listingPackage = parseListingPackage(existing.listingPackage);
+  if (!listingPackage) {
+    redirect("/moi-oglasi?err=package");
+  }
+
+  const name = String(formData.get("name") ?? "").trim();
+  const categorySlug = String(formData.get("categorySlug") ?? "").trim();
+  const subcategorySlugRaw = String(
+    formData.get("subcategorySlug") ?? ""
+  ).trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const websiteRaw = String(formData.get("website") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+
+  if (!name || !categorySlug || !city || !phone) {
+    redirect(`/moi-oglasi/${listingId}/uredi?err=missing`);
+  }
+
+  const descMax = maxDescriptionCharsForPackage(listingPackage);
+  if (description.length > descMax) {
+    redirect(`/moi-oglasi/${listingId}/uredi?err=desc`);
+  }
+
+  const cat = CATEGORY_BY_SLUG.get(categorySlug);
+  if (!cat) {
+    redirect(`/moi-oglasi/${listingId}/uredi?err=missing`);
+  }
+
+  const subOk = cat.subcategories.some((s) => s.slug === subcategorySlugRaw);
+  if (!subOk || !subcategorySlugRaw) {
+    redirect(`/moi-oglasi/${listingId}/uredi?err=subcategory`);
+  }
+
+  let imageCount = existing.imageCount;
+  let newFileCount = 0;
+  for (const entry of formData.getAll("images")) {
+    if (entry instanceof File && entry.size > 0) newFileCount++;
+  }
+  if (newFileCount > 0) {
+    const cap = maxImagesForPackage(listingPackage);
+    imageCount = Math.min(newFileCount, cap);
+  }
+
+  const website =
+    listingPackage === "free"
+      ? null
+      : websiteRaw.length > 0
+        ? websiteRaw
+        : null;
+
+  const priceTier = priceTierForPackage(listingPackage);
+  const featured = listingPackage === "premium12";
+
+  try {
+    await prisma.listing.update({
+      where: { id: listingId },
+      data: {
+        name,
+        categorySlug,
+        subcategorySlug: subcategorySlugRaw,
+        city,
+        phone,
+        website,
+        description,
+        priceTier,
+        imageCount,
+        featured,
+      },
+    });
+    revalidatePath("/");
+    revalidatePath(`/${existing.categorySlug}`);
+    revalidatePath(`/${categorySlug}`);
+    revalidatePath("/kategorii");
+    revalidatePath("/moi-oglasi");
+  } catch {
+    redirect(`/moi-oglasi/${listingId}/uredi?err=db`);
+  }
+
+  redirect("/moi-oglasi?ok=edit");
+}
+
+export async function deleteListing(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect(`/prijava?callbackUrl=${encodeURIComponent("/moi-oglasi")}`);
+  }
+
+  const listingId = String(formData.get("listingId") ?? "").trim();
+  if (!listingId) {
+    redirect("/moi-oglasi?err=missing");
+  }
+
+  const row = await prisma.listing.findFirst({
+    where: { id: listingId, userId: session.user.id },
+  });
+  if (!row) {
+    redirect("/moi-oglasi?err=notfound");
+  }
+
+  const slug = row.categorySlug;
+  try {
+    await prisma.listing.delete({ where: { id: listingId } });
+    revalidatePath("/");
+    revalidatePath(`/${slug}`);
+    revalidatePath("/kategorii");
+    revalidatePath("/moi-oglasi");
+  } catch {
+    redirect("/moi-oglasi?err=db");
+  }
+
+  redirect("/moi-oglasi?ok=deleted");
 }

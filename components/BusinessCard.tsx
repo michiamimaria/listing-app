@@ -33,10 +33,10 @@ export function BusinessCard({ business, categoryHref }: Props) {
   const imgWord = business.imageCount === 1 ? "слика" : "слики";
 
   return (
-    <article className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="font-semibold text-slate-900 group-hover:text-emerald-800">
+    <article className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="break-words font-semibold text-slate-900 group-hover:text-emerald-800">
             <Link
               href={href}
               className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
@@ -44,7 +44,7 @@ export function BusinessCard({ business, categoryHref }: Props) {
               {business.name}
             </Link>
           </h3>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="mt-0.5 break-words text-sm text-slate-500">
             {sub?.name ?? business.subcategorySlug}
             {cat ? ` · ${cat.name}` : ""}
           </p>

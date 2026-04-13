@@ -1,5 +1,17 @@
 import type { ListingPackage } from "@/types/business";
 
+/** Максимум слики по пакет (бесплатно 1; платени 3 / 5 / 10). */
+export const IMAGE_MAX_BY_PACKAGE: Record<ListingPackage, number> = {
+  free: 1,
+  premium3: 3,
+  premium6: 5,
+  premium12: 10,
+};
+
+export function maxImagesForPackage(pkg: ListingPackage): number {
+  return IMAGE_MAX_BY_PACKAGE[pkg];
+}
+
 export const STRIPE_PACKAGE_KEYS = ["premium3", "premium6", "premium12"] as const;
 export type StripePackageKey = (typeof STRIPE_PACKAGE_KEYS)[number];
 
@@ -38,7 +50,7 @@ export const STRIPE_PACKAGES: Record<
     badge: "6 месеци",
     monthlyHint: "≈ 116 ден / месец",
     features: [
-      "10 слики",
+      "5 слики",
       "3 категории",
       "Подобра позиција во пребарување",
       "Функции од пократките пакети каде што важи",
@@ -53,7 +65,7 @@ export const STRIPE_PACKAGES: Record<
     monthlyHint: "≈ 83 ден / месец",
     popular: true,
     features: [
-      "Неограничени слики",
+      "10 слики",
       "5 категории",
       "Истакнат профил",
       "Verified значка",
@@ -70,4 +82,16 @@ export function isPaidPremiumPackage(
   pkg: string
 ): pkg is StripePackageKey & ListingPackage {
   return pkg === "premium3" || pkg === "premium6" || pkg === "premium12";
+}
+
+export function parseListingPackage(v: string): ListingPackage | null {
+  if (
+    v === "free" ||
+    v === "premium3" ||
+    v === "premium6" ||
+    v === "premium12"
+  ) {
+    return v;
+  }
+  return null;
 }

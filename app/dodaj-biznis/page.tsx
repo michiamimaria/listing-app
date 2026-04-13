@@ -3,14 +3,21 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { MAIN_CATEGORIES } from "@/data/categories";
 import { getCityFilterGroups } from "@/lib/business-queries";
-import { CategorySubcategoryFields } from "@/components/CategorySubcategoryFields";
-import { submitListingForm } from "./actions";
+import { getActivePremiumPackageKeys } from "@/lib/payment-service";
+import { isCardlessDevPaymentMode, isStripeConfigured } from "@/lib/stripe";
+import { canUseSimplePremiumForm } from "@/lib/simple-premium-form";
+import { DemoPremiumPackageForm } from "@/components/DemoPremiumPackageForm";
+import { DodajBiznisPremiumPay } from "@/components/DodajBiznisPremiumPay";
+import { ListingFormSection } from "./listing-form-section";
 
 export const metadata: Metadata = {
   title: "Додај бизнис",
   description:
     "Креирај профил на listaj.mk — категорија, локација, контакт, веб, опис и слики.",
 };
+
+/** Свежа server-action мапа по барање (избегнува stale action id по HMR). */
+export const dynamic = "force-dynamic";
 
 const categoryOptions = MAIN_CATEGORIES.map((c) => ({
   slug: c.slug,
@@ -20,7 +27,14 @@ const categoryOptions = MAIN_CATEGORIES.map((c) => ({
 }));
 
 type Props = {
-  searchParams: Promise<{ ok?: string; err?: string }>;
+  searchParams: Promise<{
+    ok?: string;
+    err?: string;
+    mode?: string;
+    otkazano?: string;
+    /** Симулирано / тест плаќање завршено — прикажи потврда. */
+    plati?: string;
+  }>;
 };
 
 export default async function AddBusinessPage({ searchParams }: Props) {
@@ -28,8 +42,23 @@ export default async function AddBusinessPage({ searchParams }: Props) {
   const session = await auth();
   const cityGroups = await getCityFilterGroups();
 
+  const activePremium =
+    session?.user?.id != null
+      ? await getActivePremiumPackageKeys(session.user.id)
+      : [];
+  const forceBasic = sp.mode === "basic";
+  const showPremiumForm =
+    Boolean(session?.user) && activePremium.length > 0 && !forceBasic;
+  /** Најавен без пакет: прво плаќање на /dodaj-biznis, потоа премиум форма (не мешај со бесплатна). */
+  const payFirstBeforePremiumForm =
+    Boolean(session?.user) && activePremium.length === 0 && !forceBasic;
+  const defaultPremium = activePremium[0] ?? "premium3";
+  const stripeOn = isStripeConfigured();
+  const simulateCardlessPayment = isCardlessDevPaymentMode();
+  const simplePremiumForm = canUseSimplePremiumForm();
+
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-2xl px-3 py-8 sm:px-6 sm:py-10">
       <nav className="text-sm text-slate-500">
         <Link href="/" className="hover:text-emerald-700">
           Почетна
@@ -38,17 +67,49 @@ export default async function AddBusinessPage({ searchParams }: Props) {
         <span className="text-slate-800">Додај бизнис</span>
       </nav>
 
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900">
-        Додај го твојот бизнис
-      </h1>
-      <p className="mt-2 text-slate-600">
-        Избери категорија и подкатегорија, пакет и град. За премиум пакет прво
-        плати на страницата{" "}
-        <Link href="/paketi" className="font-medium text-emerald-700 underline">
-          Пакети
-        </Link>
-        , потоа избери го истиот пакет тука.
-      </p>
+      {showPremiumForm ? (
+        <>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Премиум оглас
+          </h1>
+          <p className="mt-2 text-sm text-slate-600 sm:text-base">
+            Користи го активниот пакет: подолг опис, повеќе слики и веб-адреса.
+          </p>
+        </>
+      ) : payFirstBeforePremiumForm ? (
+        <>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Премиум оглас
+          </h1>
+          <p className="mt-2 text-sm text-slate-600 sm:text-base">
+            <span className="font-semibold text-emerald-900">Чекор 1:</span>{" "}
+            {simplePremiumForm
+              ? "пополни ја формата подолу и активирај пакет (без картичка)."
+              : simulateCardlessPayment
+                ? "избери пакет подолу (тест без картичка)."
+                : "плати пакет подолу со картичка (безбедна страница)."}{" "}
+            <span className="font-semibold text-emerald-900">Чекор 2:</span> врати
+            се на оваа страница — ќе се појави формата за премиум оглас.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Додај бизнис
+          </h1>
+          <p className="mt-2 text-sm text-slate-600 sm:text-base">
+            Категорија, локација, контакт и краток опис. За веб и проширен
+            профил има{" "}
+            <Link
+              href="/paketi"
+              className="font-medium text-emerald-700 underline"
+            >
+              премиум пакети
+            </Link>
+            .
+          </p>
+        </>
+      )}
 
       {!session?.user ? (
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -69,13 +130,135 @@ export default async function AddBusinessPage({ searchParams }: Props) {
         </div>
       ) : null}
 
+      {session?.user && activePremium.length > 0 && forceBasic ? (
+        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+          <p>
+            Имаш активен премиум. За подолг опис и повеке слики отвори ја{" "}
+            <Link href="/dodaj-biznis" className="font-semibold underline">
+              премиум формата
+            </Link>
+            .
+          </p>
+        </div>
+      ) : null}
+
+      {!showPremiumForm && activePremium.length === 0 ? (
+        <div id="plati-so-karticka" className="mt-6 scroll-mt-24 space-y-3">
+          {simplePremiumForm ? (
+            <DemoPremiumPackageForm redirectAfter="dodaj-biznis" />
+          ) : (
+            <DodajBiznisPremiumPay
+              stripeOn={stripeOn}
+              loggedIn={Boolean(session?.user)}
+              simulateCardlessPayment={simulateCardlessPayment}
+            />
+          )}
+          {payFirstBeforePremiumForm ? (
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+              <p className="font-medium text-slate-900">По успешно плаќање</p>
+              <p className="mt-1">
+                {simplePremiumForm ? (
+                  <>
+                    По „Активирај пакет“ освежи ја страницата — премиум формата се
+                    појавува веднаш.
+                  </>
+                ) : (
+                  <>
+                    Освежи ја страницата (или отвори повторно „Додај бизнис“) —
+                    премиум формата се појавува автоматски.
+                    {simulateCardlessPayment ? (
+                      <> На локален тест нема форма за картичка.</>
+                    ) : (
+                      <>
+                        {" "}
+                        Ако се отвори нова страница за плаќање, затвори ја пред да
+                        освежиш.
+                      </>
+                    )}
+                  </>
+                )}
+              </p>
+              <p className="mt-3 border-t border-slate-100 pt-3">
+                <Link
+                  href="/dodaj-biznis?mode=basic"
+                  className="font-semibold text-emerald-800 underline hover:text-emerald-950"
+                >
+                  Објави бесплатен оглас наместо премиум
+                </Link>
+                <span className="text-slate-500">
+                  {" "}
+                  — една слика, пократок опис, без веб.
+                </span>
+              </p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+
+      {sp.otkazano ? (
+        <p
+          className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          role="status"
+        >
+          Плаќањето е откажано. Можеш да пробаш повторно со копчињата погоре или
+          на{" "}
+          <Link href="/paketi" className="font-semibold underline">
+            Пакети
+          </Link>
+          .
+        </p>
+      ) : null}
+
+      {sp.plati === "1" && session?.user ? (
+        activePremium.length > 0 ? (
+          <p
+            className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+            role="status"
+          >
+            Пакетот е активен.
+            {simplePremiumForm || simulateCardlessPayment
+              ? " (без картичка.)"
+              : ""}{" "}
+            Пополни го
+            премиум огласот подолу.{" "}
+            <Link
+              href="/dodaj-biznis"
+              className="font-semibold text-emerald-800 underline"
+            >
+              Исчисти ја адресата
+            </Link>
+          </p>
+        ) : (
+          <p
+            className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+            role="status"
+          >
+            Не гледаме активен пакет. Освежи ја страницата или најави се со истата
+            сметка со која го кликна копчето.
+          </p>
+        )
+      ) : null}
+
       {sp.ok ? (
         <p
           className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
           role="status"
         >
-          Огласот е зачуван. Ќе се појави на почетната страна и во избраната
+          Огласот е зачуван. ќе се појави на почетната страна и во избраната
           категорија.
+          {session?.user ? (
+            <>
+              {" "}
+              <Link
+                href="/moi-oglasi"
+                className="font-semibold text-emerald-800 underline hover:text-emerald-950"
+              >
+                Мои огласи
+              </Link>{" "}
+              — уреди или избриши подоцна.
+            </>
+          ) : null}
         </p>
       ) : null}
       {sp.err === "missing" ? (
@@ -103,7 +286,25 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           <Link href="/paketi" className="font-semibold underline">
             Пакети
           </Link>{" "}
-          и заврши го Stripe Checkout, потоа повтори го поднесувањето.
+          и заврши го пла��ањето, потоа повтори го поднесувањето.
+        </p>
+      ) : null}
+      {sp.err === "demo" ? (
+        <p
+          className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+          role="alert"
+        >
+          Оваа опција за активирање не е достапно со тековната конфигурација на
+          серверот. Користи пла��ање со картичка или контактирај админ.
+        </p>
+      ) : null}
+      {sp.err === "desc" ? (
+        <p
+          className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+          role="alert"
+        >
+          Описот е подолг од дозволеното за избраниот пакет. Провери го лимитот
+          под полето или избери поголем пакет.
         </p>
       ) : null}
       {sp.err === "db" ? (
@@ -116,159 +317,15 @@ export default async function AddBusinessPage({ searchParams }: Props) {
         </p>
       ) : null}
 
-      <form
-        action={submitListingForm}
-        encType="multipart/form-data"
-        className="mt-8 space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-      >
-        <div className="space-y-6">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-              Име на бизнис
-            </label>
-            <input
-              id="name"
-              name="name"
-              required
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-
-          <CategorySubcategoryFields categories={categoryOptions} />
-
-          <div>
-            <label
-              htmlFor="listingPackage"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Пакет за огласот
-            </label>
-            <select
-              id="listingPackage"
-              name="listingPackage"
-              required
-              defaultValue="free"
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            >
-              <option value="free">Бесплатно (1 слика, без веб)</option>
-              <option value="premium3">
-                Премиум 3 месеци — по плаќање (до 5 слики)
-              </option>
-              <option value="premium6">
-                Премиум 6 месеци — по плаќање (до 10 слики)
-              </option>
-              <option value="premium12">
-                Премиум 12 месеци — по плаќање (истакнат, повеќе слики)
-              </option>
-            </select>
-            <p className="mt-1 text-xs text-slate-500">
-              Премиум се активира откако ќе платиш на /paketi со истата сметка.
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="city" className="block text-sm font-medium text-slate-700">
-              Град / населба
-            </label>
-            <select
-              id="city"
-              name="city"
-              required
-              defaultValue=""
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            >
-              <option value="" disabled>
-                Избери град
-              </option>
-              {cityGroups.map((g) => (
-                <optgroup key={g.label} label={g.label}>
-                  {g.cities.map((c) => (
-                    <option key={`${g.label}-${c}`} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-slate-500">
-              Листа: Македонија (општински центри) + големи светски градови.
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
-              Телефон
-            </label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              required
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="website" className="block text-sm font-medium text-slate-700">
-              Веб-страница (за премиум; за бесплатно се игнорира)
-            </label>
-            <input
-              id="website"
-              name="website"
-              type="url"
-              placeholder="https://"
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Опис на услугите
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={4}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="images" className="block text-sm font-medium text-slate-700">
-              Слики (бројот се зачувува; качување на фајлови наскоро)
-            </label>
-            <input
-              id="images"
-              name="images"
-              type="file"
-              accept="image/*"
-              multiple
-              className="mt-1 w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-emerald-800"
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              Лимити по пакет: бесплатно 1, 3м до 5, 6м до 10, 12м повеќе.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3 pt-2">
-            <button
-              type="submit"
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-700 px-6 text-sm font-semibold text-white hover:bg-emerald-800"
-            >
-              Зачувај оглас
-            </button>
-            <Link
-              href="/paketi"
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 px-6 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Спореди пакети
-            </Link>
-          </div>
-        </div>
-      </form>
+      {!payFirstBeforePremiumForm ? (
+        <ListingFormSection
+          showPremiumForm={showPremiumForm}
+          cityGroups={cityGroups}
+          categoryOptions={categoryOptions}
+          activePremium={activePremium}
+          defaultPremium={defaultPremium}
+        />
+      ) : null}
     </main>
   );
 }

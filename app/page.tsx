@@ -33,10 +33,10 @@ export default async function Home({ searchParams }: Props) {
   const topRated = await topRatedBusinesses();
 
   return (
-    <main>
-      <section className="border-b border-emerald-900/10 bg-gradient-to-b from-emerald-950 to-emerald-900 px-4 py-14 text-white sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+    <main className="min-w-0 w-full">
+      <section className="border-b border-emerald-900/10 bg-gradient-to-b from-emerald-950 to-emerald-900 px-3 py-12 text-white sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-3xl px-1 text-center sm:px-0">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl">
             Најди бизнис или услуга
           </h1>
           <p className="mt-3 text-emerald-100/90">
@@ -44,7 +44,7 @@ export default async function Home({ searchParams }: Props) {
             Македонија.
           </p>
           <form
-            className="mx-auto mt-8 flex max-w-xl flex-col gap-2 sm:flex-row"
+            className="mx-auto mt-8 flex min-w-0 max-w-xl flex-col gap-2 sm:flex-row"
             action="/"
             method="get"
             role="search"
@@ -58,7 +58,7 @@ export default async function Home({ searchParams }: Props) {
               type="search"
               placeholder="Пребарај бизнис или услуга…"
               defaultValue={query}
-              className="min-h-11 flex-1 rounded-xl border border-white/20 bg-white/10 px-4 text-white placeholder:text-emerald-200/70 outline-none ring-emerald-400/50 focus:ring-2"
+              className="min-h-11 min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-4 text-white placeholder:text-emerald-200/70 outline-none ring-emerald-400/50 focus:ring-2"
             />
             <button
               type="submit"
@@ -70,10 +70,10 @@ export default async function Home({ searchParams }: Props) {
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <div className="mx-auto w-full min-w-0 max-w-6xl px-3 py-10 sm:px-6 sm:py-12">
         {query ? (
           <section className="mb-14" aria-live="polite">
-            <h2 className="text-xl font-semibold text-slate-900">
+            <h2 className="break-words text-xl font-semibold text-slate-900">
               Резултати за &ldquo;{query}&rdquo;
             </h2>
             {searchResults.length === 0 ? (
@@ -124,8 +124,8 @@ export default async function Home({ searchParams }: Props) {
         </section>
 
         <section className="mb-14">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2 gap-y-1">
+            <h2 className="min-w-0 text-xl font-semibold text-slate-900">
               Популарни бизниси
             </h2>
           </div>

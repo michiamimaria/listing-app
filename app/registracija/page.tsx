@@ -15,7 +15,7 @@ export default async function RegisterPage({ searchParams }: Props) {
   const sp = await searchParams;
 
   return (
-    <main className="mx-auto max-w-md px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-md px-3 py-8 sm:px-6 sm:py-10">
       <nav className="text-sm text-slate-500">
         <Link href="/" className="hover:text-emerald-700">
           Почетна
@@ -62,7 +62,7 @@ export default async function RegisterPage({ searchParams }: Props) {
 
       <form
         action={registerUser}
-        className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
       >
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-slate-700">
@@ -73,7 +73,7 @@ export default async function RegisterPage({ searchParams }: Props) {
             name="name"
             type="text"
             autoComplete="name"
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm sm:min-h-0"
           />
         </div>
         <div>
@@ -86,7 +86,7 @@ export default async function RegisterPage({ searchParams }: Props) {
             type="email"
             required
             autoComplete="email"
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm sm:min-h-0"
           />
         </div>
         <div>
@@ -100,12 +100,12 @@ export default async function RegisterPage({ searchParams }: Props) {
             required
             minLength={8}
             autoComplete="new-password"
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm sm:min-h-0"
           />
         </div>
         <button
           type="submit"
-          className="w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"
+          className="min-h-[44px] w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 sm:min-h-0"
         >
           Регистрирај се
         </button>
