@@ -27,8 +27,6 @@ npm install
 npm run dev
 ```
 
-Отвори [http://localhost:3000](http://localhost:3000).
-
 ## Скрипти
 
 | Команда       | Опис                          |
