@@ -38,12 +38,16 @@ model Listing {
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name            String
+  /// English display (optional). When set, EN locale uses this instead of name.
+  nameEn          String?
   categorySlug    String
   subcategorySlug String
   city            String
   phone           String
   website         String?
   description     String   @default("")
+  /// English description for EN locale when set.
+  descriptionEn   String?
   listingPackage  String   @default("free")
   rating          Float    @default(0)
   reviewCount     Int      @default(0)

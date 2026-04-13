@@ -3,11 +3,12 @@ import type { CitySelectGroup } from "@/data/cities";
 import { DESCRIPTION_MAX_BY_PACKAGE } from "@/lib/listing-constants";
 import {
   IMAGE_MAX_BY_PACKAGE,
-  STRIPE_PACKAGES,
   isStripePackageKey,
   type StripePackageKey,
 } from "@/lib/listing-packages";
 import type { ListingPackage } from "@/types/business";
+import type { Locale } from "@/lib/i18n/constants";
+import type { UiMessages } from "@/lib/i18n/ui-messages";
 import {
   CategorySubcategoryFields,
   type CategoryOption,
@@ -33,19 +34,25 @@ type Props = {
   categoryOptions: CategoryOption[];
   activePremium: StripePackageKey[];
   defaultPremium: StripePackageKey;
-  /** Уредување на постоечки оглас (пакетот не се менува од формата). */
+  ui: UiMessages;
+  locale: Locale;
   edit?: ListingFormEditInitial;
 };
 
-/** Посебен сервер-модул за стабилна регистрација на server action (избегнува Turbopack/HMR mismatch). */
 export function ListingFormSection({
   showPremiumForm,
   cityGroups,
   categoryOptions,
   activePremium,
   defaultPremium,
+  ui,
+  locale,
   edit,
 }: Props) {
+  const lf = ui.listingForm;
+  const numLoc = locale === "en" ? "en-GB" : "mk-MK";
+  const cityLabels = ui.cityGroups;
+
   const isPremiumLayout = edit
     ? edit.listingPackage !== "free"
     : showPremiumForm;
@@ -64,17 +71,17 @@ export function ListingFormSection({
           {edit ? (
             <div className="rounded-lg border border-emerald-200/80 bg-white/90 px-3 py-2 text-sm text-emerald-950">
               <p>
-                Пакет:{" "}
+                {lf.packageTitle}{" "}
                 <strong>
                   {edit.listingPackage === "free"
-                    ? "бесплатен"
+                    ? lf.packageFree
                     : isStripePackageKey(edit.listingPackage)
-                      ? STRIPE_PACKAGES[edit.listingPackage].badge
+                      ? ui.stripeTiers[edit.listingPackage].badge
                       : edit.listingPackage}
                 </strong>{" "}
-                (не се менува овде — види{" "}
+                {lf.pkgUnchanged}{" "}
                 <Link href="/paketi" className="font-semibold underline">
-                  Пакети
+                  {lf.packagesLink}
                 </Link>
                 ).
               </p>
@@ -85,7 +92,7 @@ export function ListingFormSection({
                 htmlFor="listingPackage"
                 className="block text-sm font-medium text-emerald-950"
               >
-                Платен пакет за овој оглас
+                {lf.paidSelectLabel}
               </label>
               <select
                 id="listingPackage"
@@ -96,22 +103,22 @@ export function ListingFormSection({
               >
                 {activePremium.map((key) => (
                   <option key={key} value={key}>
-                    {STRIPE_PACKAGES[key].badge} — до{" "}
-                    {IMAGE_MAX_BY_PACKAGE[key]} слики, до{" "}
-                    {DESCRIPTION_MAX_BY_PACKAGE[key].toLocaleString("mk-MK")}{" "}
-                    карактери {key === "premium12" ? " (истакнат)" : ""}
+                    {lf.optionLine(
+                      ui.stripeTiers[key].badge,
+                      String(IMAGE_MAX_BY_PACKAGE[key]),
+                      DESCRIPTION_MAX_BY_PACKAGE[key].toLocaleString(numLoc),
+                      key === "premium12"
+                    )}
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-emerald-900/80">
-                Прикажани се само пакетите што ги имаш платени и се активни.
-              </p>
+              <p className="mt-1 text-xs text-emerald-900/80">{lf.paidSelectHint}</p>
             </div>
           )}
 
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-              Име на бизнис
+              {lf.businessName}
             </label>
             <input
               id="name"
@@ -130,7 +137,7 @@ export function ListingFormSection({
 
           <div>
             <label htmlFor="city" className="block text-sm font-medium text-slate-700">
-              Град / населба
+              {lf.city}
             </label>
             <select
               id="city"
@@ -140,26 +147,24 @@ export function ListingFormSection({
               className="mt-1 min-h-[44px] w-full min-w-0 rounded-lg border border-slate-200 px-3 py-2.5 text-sm sm:min-h-0"
             >
               <option value="" disabled>
-                Избери град
+                {lf.selectCity}
               </option>
               {cityGroups.map((g) => (
-                <optgroup key={g.label} label={g.label}>
+                <optgroup key={g.id} label={cityLabels[g.id]}>
                   {g.cities.map((c) => (
-                    <option key={`${g.label}-${c}`} value={c}>
+                    <option key={`${g.id}-${c}`} value={c}>
                       {c}
                     </option>
                   ))}
                 </optgroup>
               ))}
             </select>
-            <p className="mt-1 text-xs text-slate-500">
-              Листа: Македонија (општински центри) + големи светски градови.
-            </p>
+            <p className="mt-1 text-xs text-slate-500">{lf.cityListHint}</p>
           </div>
 
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
-              Телефон
+              {lf.phone}
             </label>
             <input
               id="phone"
@@ -173,7 +178,7 @@ export function ListingFormSection({
 
           <div>
             <label htmlFor="website" className="block text-sm font-medium text-slate-700">
-              Веб-страница (вклучено во премиум)
+              {lf.websitePremium}
             </label>
             <input
               id="website"
@@ -190,7 +195,7 @@ export function ListingFormSection({
               htmlFor="description"
               className="block text-sm font-medium text-slate-700"
             >
-              Опис на услугите (проширено поле)
+              {lf.descPremium}
             </label>
             {edit ? (
               <DescriptionWithPackageLimit
@@ -199,16 +204,13 @@ export function ListingFormSection({
                 defaultValue={edit.description}
               />
             ) : (
-              <DescriptionWithPackageLimit
-                packageSelectId="listingPackage"
-                rows={8}
-              />
+              <DescriptionWithPackageLimit packageSelectId="listingPackage" rows={8} />
             )}
           </div>
 
           <div className="rounded-xl border border-emerald-100 bg-white/80 p-4">
             <label htmlFor="images" className="block text-sm font-medium text-emerald-950">
-              Слики за премиум оглас
+              {lf.imagesPremium}
             </label>
             <input
               id="images"
@@ -219,9 +221,7 @@ export function ListingFormSection({
               className="mt-2 w-full min-w-0 text-sm text-slate-600 file:mr-3 file:min-h-[44px] file:rounded-lg file:border-0 file:bg-emerald-100 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-emerald-900 sm:file:min-h-0"
             />
             <p className="mt-2 text-xs text-slate-600">
-              {edit
-                ? "Ако не избереш нови слики, останува претходниот број. Инаку се зема бројот од избраните фајлови (до лимитот на пакетот)."
-                : "Бројот на слики што се зачувува зависи од избраниот пакет (види го менито погоре). Качување на фајловите на сервер наскоро."}
+              {edit ? lf.imagesPremiumHintEdit : lf.imagesPremiumHintNew}
             </p>
           </div>
 
@@ -230,21 +230,21 @@ export function ListingFormSection({
               type="submit"
               className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-700 px-6 text-sm font-semibold text-white hover:bg-emerald-800"
             >
-              {edit ? "Зачувај промени" : "Зачувај премиум оглас"}
+              {edit ? lf.savePremium : lf.savePremiumNew}
             </button>
             {edit ? (
               <Link
                 href="/moi-oglasi"
                 className="text-sm font-medium text-slate-600 underline hover:text-slate-900"
               >
-                Назад кон моите огласи
+                {lf.backMine}
               </Link>
             ) : (
               <Link
                 href="/dodaj-biznis?mode=basic"
                 className="text-sm font-medium text-slate-600 underline hover:text-slate-900"
               >
-                Објави бесплатен оглас наместо ова
+                {lf.freeInsteadPremium}
               </Link>
             )}
           </div>
@@ -265,13 +265,13 @@ export function ListingFormSection({
 
         <div>
           <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            Пакет: <strong>бесплатен</strong> — 1 месец,{" "}
-            {DESCRIPTION_MAX_BY_PACKAGE.free.toLocaleString("mk-MK")} карактери, 1
-            слика, без веб.
+            {lf.freeBlurb(
+              DESCRIPTION_MAX_BY_PACKAGE.free.toLocaleString(numLoc)
+            )}
             {edit ? (
               <>
                 {" "}
-                <span className="text-slate-600">(уредување — пакетот не се менува овде.)</span>
+                <span className="text-slate-600">{lf.freeBlurbEdit}</span>
               </>
             ) : null}
           </p>
@@ -279,7 +279,7 @@ export function ListingFormSection({
 
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-            Име на бизнис
+            {lf.businessName}
           </label>
           <input
             id="name"
@@ -298,7 +298,7 @@ export function ListingFormSection({
 
         <div>
           <label htmlFor="city" className="block text-sm font-medium text-slate-700">
-            Град / населба
+            {lf.city}
           </label>
           <select
             id="city"
@@ -308,26 +308,24 @@ export function ListingFormSection({
             className="mt-1 min-h-[44px] w-full min-w-0 rounded-lg border border-slate-200 px-3 py-2.5 text-sm sm:min-h-0"
           >
             <option value="" disabled>
-              Избери град
+              {lf.selectCity}
             </option>
             {cityGroups.map((g) => (
-              <optgroup key={g.label} label={g.label}>
+              <optgroup key={g.id} label={cityLabels[g.id]}>
                 {g.cities.map((c) => (
-                  <option key={`${g.label}-${c}`} value={c}>
+                  <option key={`${g.id}-${c}`} value={c}>
                     {c}
                   </option>
                 ))}
               </optgroup>
             ))}
           </select>
-          <p className="mt-1 text-xs text-slate-500">
-            Листа: Македонија (општински центри) + големи светски градови.
-          </p>
+          <p className="mt-1 text-xs text-slate-500">{lf.cityListHint}</p>
         </div>
 
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
-            Телефон
+            {lf.phone}
           </label>
           <input
             id="phone"
@@ -341,20 +339,20 @@ export function ListingFormSection({
 
         <div>
           <label htmlFor="website" className="block text-sm font-medium text-slate-700">
-            Веб-страница
+            {lf.website}
           </label>
           <input
             id="website"
             name="website"
             type="url"
-            placeholder="Недостапно за бесплатен пакет"
+            placeholder={lf.websiteDisabledPh}
             disabled
             className="mt-1 min-h-[44px] w-full min-w-0 cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 sm:min-h-0"
           />
           <p className="mt-1 text-xs text-slate-500">
-            За веб-адреса избери премиум на{" "}
+            {lf.websitePremiumHint}{" "}
             <Link href="/paketi" className="font-medium text-emerald-700 underline">
-              Пакети
+              {lf.packagesLink}
             </Link>
             .
           </p>
@@ -365,7 +363,7 @@ export function ListingFormSection({
             htmlFor="description"
             className="block text-sm font-medium text-slate-700"
           >
-            Опис на услугите
+            {lf.descFree}
           </label>
           <DescriptionWithPackageLimit
             fixedPackage="free"
@@ -376,7 +374,7 @@ export function ListingFormSection({
 
         <div>
           <label htmlFor="images" className="block text-sm font-medium text-slate-700">
-            Слики (бесплатно: 1)
+            {lf.imagesFree}
           </label>
           <input
             id="images"
@@ -387,9 +385,7 @@ export function ListingFormSection({
             className="mt-1 w-full min-w-0 text-sm text-slate-600 file:mr-3 file:min-h-[44px] file:rounded-lg file:border-0 file:bg-emerald-50 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-emerald-800 sm:file:min-h-0"
           />
           <p className="mt-1 text-xs text-slate-500">
-            {edit
-              ? "Ако не избереш нов фајл, останува претходниот број слики."
-              : "За повеќе слики користи премиум пакет на /paketi."}
+            {edit ? lf.imagesFreeHintEdit : lf.imagesFreeHintNew}
           </p>
         </div>
 
@@ -398,14 +394,14 @@ export function ListingFormSection({
             type="submit"
             className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-700 px-6 text-sm font-semibold text-white hover:bg-emerald-800"
           >
-            {edit ? "Зачувај промени" : "Зачувај бесплатен оглас"}
+            {edit ? lf.saveEdit : lf.saveFree}
           </button>
           {edit ? (
             <Link
               href="/moi-oglasi"
               className="text-sm font-medium text-slate-600 underline hover:text-slate-900"
             >
-              Назад кон моите огласи
+              {lf.backMine}
             </Link>
           ) : null}
         </div>

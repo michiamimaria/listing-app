@@ -7,6 +7,8 @@ import {
   isStripeConfigured,
 } from "@/lib/stripe";
 import { recordDevMockPayment } from "@/lib/payment-service";
+import { parseLocale } from "@/lib/i18n/constants";
+import { messages, stripeCheckoutProduct } from "@/lib/i18n/messages";
 import { isStripePackageKey, STRIPE_PACKAGES } from "@/lib/listing-packages";
 
 function appOrigin(): string {
@@ -17,43 +19,41 @@ function appOrigin(): string {
 }
 
 export async function POST(req: Request) {
-  if (!isStripeConfigured()) {
+  let body: { packageKey?: string; from?: string; locale?: string };
+  try {
+    body = await req.json();
+  } catch {
     return NextResponse.json(
-      {
-        error:
-          "Плаќањето со картичка не е подготвено. Провери ја конфигурацијата во .env (таен клуч и адреса на апликацијата) или за локален тест без картичка види примерот во .env.example — рестартирај го серверот.",
-      },
-      { status: 503 }
+      { error: messages.mk.checkoutErrors.invalidRequest },
+      { status: 400 }
     );
+  }
+
+  const locale = parseLocale(body.locale);
+  const ce = messages[locale].checkoutErrors;
+
+  if (!isStripeConfigured()) {
+    return NextResponse.json({ error: ce.stripeNotConfigured }, { status: 503 });
   }
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json(
-      { error: "Најави се за да платиш со картичка." },
-      { status: 401 }
-    );
-  }
-
-  let body: { packageKey?: string; from?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Невалидно барање" }, { status: 400 });
+    return NextResponse.json({ error: ce.signInRequired }, { status: 401 });
   }
 
   const fromDodaj = body.from === "dodaj-biznis";
   const packageKey = body.packageKey;
   if (!packageKey || !isStripePackageKey(packageKey)) {
-    return NextResponse.json({ error: "Непознат пакет" }, { status: 400 });
+    return NextResponse.json({ error: ce.unknownPackage }, { status: 400 });
   }
 
+  const product = stripeCheckoutProduct(locale, packageKey);
   const def = STRIPE_PACKAGES[packageKey];
   const origin = appOrigin();
 
   if (isDevStripeMock() && !hasStripeSecretKey()) {
     await recordDevMockPayment(session.user.id, packageKey);
-    /** Релативен пат: клиентот додава origin (ист порт како табот — NEXT_PUBLIC_APP_URL често лажи). */
+    /** Relative path: client adds origin (same port as tab — NEXT_PUBLIC_APP_URL is often wrong). */
     const successPath = fromDodaj
       ? `/dodaj-biznis?plati=1`
       : `/paketi/uspeshno?mock_ok=1`;
@@ -61,13 +61,7 @@ export async function POST(req: Request) {
   }
 
   if (!hasStripeSecretKey()) {
-    return NextResponse.json(
-      {
-        error:
-          "Нема валиден таен клуч за плаќање во .env или провери ги опциите за локален тест во .env.example.",
-      },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: ce.stripeSecretMissing }, { status: 503 });
   }
 
   const stripe = getStripe();
@@ -83,8 +77,8 @@ export async function POST(req: Request) {
           price_data: {
             currency: "mkd",
             product_data: {
-              name: def.label,
-              description: def.description,
+              name: product.name,
+              description: product.description,
             },
             unit_amount: def.amountMkd,
           },
@@ -104,20 +98,11 @@ export async function POST(req: Request) {
       customer_email: session.user.email ?? undefined,
     });
   } catch {
-    return NextResponse.json(
-      {
-        error:
-          "Платежниот систем го одби барањето (невалиден клуч или сметка). Провери ги поставките во .env или опциите за локален тест во .env.example.",
-      },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: ce.stripeRejected }, { status: 502 });
   }
 
   if (!checkout.url) {
-    return NextResponse.json(
-      { error: "Не добивме адреса за плаќање" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: ce.noPaymentUrl }, { status: 500 });
   }
 
   return NextResponse.json({ url: checkout.url });

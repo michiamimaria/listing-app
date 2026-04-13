@@ -1,12 +1,20 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { LOCALE_COOKIE, type Locale } from "@/lib/i18n/constants";
+import { messages } from "@/lib/i18n/messages";
 import { getStripe, hasStripeSecretKey } from "@/lib/stripe";
 import { recordPaymentFromCheckoutSession } from "@/lib/payment-service";
 
 export async function POST(req: Request) {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(LOCALE_COOKIE)?.value;
+  const locale: Locale =
+    raw === "en" || raw === "mk" ? raw : "en";
+  const we = messages[locale].webhookErrors;
+
   if (!hasStripeSecretKey()) {
-    return NextResponse.json({ error: "Webhook не е активен" }, { status: 503 });
+    return NextResponse.json({ error: we.inactive }, { status: 503 });
   }
 
   const whSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
@@ -18,14 +26,14 @@ export async function POST(req: Request) {
   }
 
   if (!sig) {
-    return NextResponse.json({ error: "Нема потпис" }, { status: 400 });
+    return NextResponse.json({ error: we.noSignature }, { status: 400 });
   }
 
   let event: Stripe.Event;
   try {
     event = getStripe().webhooks.constructEvent(body, sig, whSecret);
   } catch {
-    return NextResponse.json({ error: "Невалиден webhook" }, { status: 400 });
+    return NextResponse.json({ error: we.invalid }, { status: 400 });
   }
 
   if (event.type === "checkout.session.completed") {
@@ -34,7 +42,7 @@ export async function POST(req: Request) {
       try {
         await recordPaymentFromCheckoutSession(s.id);
       } catch {
-        /* логирање во продукција */
+        /* log in production */
       }
     }
   }

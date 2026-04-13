@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "@/components/locale-provider";
 
 type Props = {
   packageKey: "premium3" | "premium6" | "premium12";
@@ -19,6 +20,7 @@ export function StripeCheckoutButton({
   checkoutFrom = "paketi",
   children,
 }: Props) {
+  const { locale, t } = useLocale();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -30,11 +32,11 @@ export function StripeCheckoutButton({
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packageKey, from: checkoutFrom }),
+        body: JSON.stringify({ packageKey, from: checkoutFrom, locale }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok) {
-        setErr(data.error ?? "Неуспешно плаќање");
+        setErr(data.error ?? t.checkoutErrors.generic);
         return;
       }
       if (data.url) {
@@ -45,9 +47,9 @@ export function StripeCheckoutButton({
             : u;
         return;
       }
-      setErr("Серверот не врати линк за плаќање.");
+      setErr(t.checkoutErrors.noUrl);
     } catch {
-      setErr("Мрежна грешка");
+      setErr(t.checkoutErrors.network);
     } finally {
       setLoading(false);
     }
@@ -64,7 +66,7 @@ export function StripeCheckoutButton({
           "inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#635BFF] px-6 text-sm font-semibold text-white hover:bg-[#544bdb] disabled:opacity-60"
         }
       >
-        {loading ? "Се отвора страницата…" : children}
+        {loading ? t.checkoutErrors.opening : children}
       </button>
       {err ? (
         <p className="mt-2 text-sm text-red-600" role="alert">

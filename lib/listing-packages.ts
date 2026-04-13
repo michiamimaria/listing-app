@@ -1,6 +1,6 @@
 import type { ListingPackage } from "@/types/business";
 
-/** Максимум слики по пакет (бесплатно 1; платени 3 / 5 / 10). */
+/** Max images per plan (free 1; paid 3 / 5 / 10). */
 export const IMAGE_MAX_BY_PACKAGE: Record<ListingPackage, number> = {
   free: 1,
   premium3: 3,

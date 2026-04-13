@@ -1,7 +1,9 @@
 import { MACEDONIA_CITIES } from "@/data/cities-mk";
 import { WORLD_CITIES } from "@/data/cities-world";
 
-export type CitySelectGroup = { label: string; cities: string[] };
+export type CityGroupId = "mk" | "world" | "extra";
+
+export type CitySelectGroup = { id: CityGroupId; cities: string[] };
 
 export { MACEDONIA_CITIES, WORLD_CITIES };
 
@@ -13,12 +15,12 @@ export function buildCitySelectGroups(dbCities: string[] = []): CitySelectGroup[
     .sort((a, b) => a.localeCompare(b));
 
   const groups: CitySelectGroup[] = [
-    { label: "Македонија", cities: [...MACEDONIA_CITIES] },
-    { label: "Свет", cities: [...WORLD_CITIES] },
+    { id: "mk", cities: [...MACEDONIA_CITIES] },
+    { id: "world", cities: [...WORLD_CITIES] },
   ];
   if (extra.length) {
     groups.push({
-      label: "Друго (од постоечки огласи)",
+      id: "extra",
       cities: extra,
     });
   }

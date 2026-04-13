@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale } from "@/components/locale-provider";
 import { StripeCheckoutButton } from "@/components/StripeCheckoutButton";
 import { STRIPE_PACKAGE_KEYS, STRIPE_PACKAGES } from "@/lib/listing-packages";
 
@@ -20,42 +21,32 @@ export function DodajBiznisPremiumPay({
   loggedIn,
   simulateCardlessPayment = false,
 }: Props) {
+  const { t } = useLocale();
+  const dp = t.ui.dodajPay;
+
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
       <p className="text-sm font-semibold text-emerald-950">
-        {simulateCardlessPayment
-          ? "Избери премиум пакет"
-          : "Плати премиум со картичка (Visa, Mastercard, Amex…)"}
+        {simulateCardlessPayment ? dp.titleSimulate : dp.titlePayCard}
       </p>
       <p className="mt-1 text-xs text-emerald-900/85">
         {!loggedIn ? (
-          <>
-            Најави се преку копчињата подолу, па на безбедната страница внеси
-            податоци од картичка.
-          </>
+          dp.hintSignInCard
         ) : simulateCardlessPayment ? (
-          <>
-            На локален сервер кликот само го зачувува пакетот за тест — без
-            страница за картичка.
-          </>
+          dp.hintLocalTest
         ) : (
-          <>
-            Избери пакет — отвора се безбедна страница каде избираш тип картичка
-            и ги внесуваш податоците.
-          </>
+          dp.hintStripeFlow
         )}
       </p>
       {loggedIn && !stripeOn && !simulateCardlessPayment ? (
         <p className="mt-2 text-xs text-amber-900" role="status">
-          Нема валидна конфигурација за плаќање во{" "}
-          <code className="rounded bg-amber-100 px-1">.env</code> — провери ги
-          тајните клучеви и рестартирај го серверот. Копчињата се кликливи; без
-          исправна поставка ќе добиеш порака за грешка.
+          {dp.stripeEnvWarning}
         </p>
       ) : null}
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+           <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {STRIPE_PACKAGE_KEYS.map((key) => {
           const def = STRIPE_PACKAGES[key];
+          const badge = t.stripePkg[key].badge;
           if (!loggedIn) {
             return (
               <Link
@@ -63,7 +54,7 @@ export function DodajBiznisPremiumPay({
                 href={loginHref}
                 className={`${BTN_CLASS} no-underline`}
               >
-                {def.badge} · {def.amountMkd} ден
+                {dp.amountLine(badge, def.amountMkd)}
               </Link>
             );
           }
@@ -74,14 +65,14 @@ export function DodajBiznisPremiumPay({
               checkoutFrom="dodaj-biznis"
               className={BTN_CLASS}
             >
-              {def.badge} · {def.amountMkd} ден
+              {dp.amountLine(badge, def.amountMkd)}
             </StripeCheckoutButton>
           );
         })}
       </div>
       <p className="mt-3 text-center text-xs text-slate-600">
         <Link href="/paketi" className="font-medium text-emerald-800 underline">
-          Целосна споредба на пакети
+          {dp.footerComparePlans}
         </Link>
       </p>
     </div>

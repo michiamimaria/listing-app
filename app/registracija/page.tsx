@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getServerLocale } from "@/lib/i18n/locale";
+import { messages } from "@/lib/i18n/messages";
 import { registerUser } from "./actions";
 
-export const metadata: Metadata = {
-  title: "Регистрација",
-  description: "Креирај сметка на listaj.mk за да додаваш огласи.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  const rp = messages[locale].ui.registerPage;
+  return { title: rp.title, description: rp.description };
+}
 
 type Props = {
   searchParams: Promise<{ err?: string }>;
@@ -13,50 +16,52 @@ type Props = {
 
 export default async function RegisterPage({ searchParams }: Props) {
   const sp = await searchParams;
+  const locale = await getServerLocale();
+  const rp = messages[locale].ui.registerPage;
+  const ui = messages[locale].ui;
+  const nav = messages[locale].nav;
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-md px-3 py-8 sm:px-6 sm:py-10">
       <nav className="text-sm text-slate-500">
         <Link href="/" className="hover:text-emerald-700">
-          Почетна
+          {ui.common.home}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-800">Регистрација</span>
+        <span className="text-slate-800">{rp.breadcrumb}</span>
       </nav>
 
-      <h1 className="mt-4 text-2xl font-semibold text-slate-900">
-        Нова сметка
-      </h1>
+      <h1 className="mt-4 text-2xl font-semibold text-slate-900">{rp.heading}</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Потоа ќе можеш да додаваш огласи од страницата{" "}
+        {rp.intro}{" "}
         <Link href="/dodaj-biznis" className="text-emerald-700 underline">
-          Додај бизнис
+          {nav.addBusiness}
         </Link>
         .
       </p>
 
       {sp.err === "missing" ? (
         <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
-          Внеси е-пошта и лозинка.
+          {rp.hint}
         </p>
       ) : null}
       {sp.err === "password" ? (
         <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
-          Лозинката мора да има најмалку 8 знаци.
+          {rp.passwordShort}
         </p>
       ) : null}
       {sp.err === "exists" ? (
         <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
-          Оваа е-пошта веќе е регистрирана.{" "}
+          {rp.emailTaken}{" "}
           <Link href="/prijava" className="font-medium underline">
-            Најави се
+            {rp.signInLink}
           </Link>
           .
         </p>
       ) : null}
       {sp.err === "db" ? (
         <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
-          Грешка при зачувување. Провери дали базата е поставена.
+          {rp.dbError}
         </p>
       ) : null}
 
@@ -66,7 +71,7 @@ export default async function RegisterPage({ searchParams }: Props) {
       >
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-            Име (незадолжително)
+            {rp.nameOptional}
           </label>
           <input
             id="name"
@@ -78,7 +83,7 @@ export default async function RegisterPage({ searchParams }: Props) {
         </div>
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-            Е-пошта
+            {rp.email}
           </label>
           <input
             id="email"
@@ -91,7 +96,7 @@ export default async function RegisterPage({ searchParams }: Props) {
         </div>
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-            Лозинка (мин. 8 знаци)
+            {rp.password}
           </label>
           <input
             id="password"
@@ -107,14 +112,14 @@ export default async function RegisterPage({ searchParams }: Props) {
           type="submit"
           className="min-h-[44px] w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 sm:min-h-0"
         >
-          Регистрирај се
+          {rp.submit}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-600">
-        Веќе имаш сметка?{" "}
+        {rp.hasAccount}{" "}
         <Link href="/prijava" className="font-medium text-emerald-700 hover:underline">
-          Најави се
+          {rp.signIn}
         </Link>
       </p>
     </main>

@@ -1,36 +1,60 @@
+"use client";
+
 import Link from "next/link";
 import type { Business } from "@/types/business";
 import { CATEGORY_BY_SLUG } from "@/data/categories";
+import { useLocale } from "@/components/locale-provider";
+import {
+  mainCategoryLabel,
+  subcategoryLabel,
+} from "@/lib/i18n/category-labels";
+import { cityLabelForLocale } from "@/lib/i18n/mk-city-latin";
 
-function packageLabel(pkg: Business["listingPackage"]): string | null {
+function packageLabel(
+  pkg: Business["listingPackage"],
+  featured: string,
+  premium: string
+): string | null {
   switch (pkg) {
     case "premium12":
-      return "Истакнато";
+      return featured;
     case "premium6":
     case "premium3":
-      return "Премиум";
+      return premium;
     default:
       return null;
   }
 }
 
-function priceLabel(tier: number): string {
-  if (tier === 1) return "ниско";
-  if (tier === 2) return "средно";
-  return "високо";
-}
-
 type Props = { business: Business; categoryHref?: string };
 
 export function BusinessCard({ business, categoryHref }: Props) {
+  const { locale, t } = useLocale();
+  const bc = t.ui.businessCard;
   const cat = CATEGORY_BY_SLUG.get(business.categorySlug);
   const sub = cat?.subcategories.find(
     (s) => s.slug === business.subcategorySlug
   );
-  const badge = packageLabel(business.listingPackage);
+  const badge = packageLabel(
+    business.listingPackage,
+    bc.featured,
+    bc.premium
+  );
   const href = categoryHref ?? `/${business.categorySlug}`;
 
-  const imgWord = business.imageCount === 1 ? "слика" : "слики";
+  const imgWord =
+    business.imageCount === 1 ? bc.imageOne : bc.imageMany;
+  const subLine = sub
+    ? subcategoryLabel(sub, locale)
+    : business.subcategorySlug;
+  const catLine = cat ? mainCategoryLabel(cat, locale) : "";
+
+  const priceWord =
+    business.priceTier === 1
+      ? bc.priceLow
+      : business.priceTier === 2
+        ? bc.priceMid
+        : bc.priceHigh;
 
   return (
     <article className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
@@ -45,8 +69,8 @@ export function BusinessCard({ business, categoryHref }: Props) {
             </Link>
           </h3>
           <p className="mt-0.5 break-words text-sm text-slate-500">
-            {sub?.name ?? business.subcategorySlug}
-            {cat ? ` · ${cat.name}` : ""}
+            {subLine}
+            {catLine ? ` · ${catLine}` : ""}
           </p>
         </div>
         {badge ? (
@@ -61,28 +85,28 @@ export function BusinessCard({ business, categoryHref }: Props) {
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
         <span className="inline-flex items-center gap-1">
           <span className="text-amber-500" aria-hidden>
-            ★
+            {"\u2605"}
           </span>
           {business.rating > 0 ? (
             <>
               <span className="font-medium text-slate-800">{business.rating}</span>
               <span className="text-slate-400">
                 ({business.reviewCount}{" "}
-                {business.reviewCount === 1 ? "рецензија" : "рецензии"})
+                {business.reviewCount === 1 ? bc.reviewOne : bc.reviewMany})
               </span>
             </>
           ) : (
-            <span className="text-slate-400">Сè уште без оцени</span>
+            <span className="text-slate-400">{bc.noRatingsYet}</span>
           )}
         </span>
-        <span>{business.city}</span>
+        <span>{cityLabelForLocale(business.city, locale)}</span>
         <span className="text-slate-400">
-          Цена: {priceLabel(business.priceTier)} ниво
+          {bc.pricePrefix} {priceWord} {bc.priceSuffix}
         </span>
       </div>
       <p className="mt-3 text-xs text-slate-400">
         {business.imageCount} {imgWord}
-        {business.website ? " · Врска до веб-страница" : ""}
+        {business.website ? bc.websiteLink : ""}
       </p>
     </article>
   );

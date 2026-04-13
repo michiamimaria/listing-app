@@ -269,8 +269,3 @@ export const HOMEPAGE_CATEGORY_SLUGS = [
   "zdravje",
   "prodavnici",
 ] as const;
-
-/** Име за приказ на почетна (кратко каде е зададено) */
-export function categoryLabelForHome(c: MainCategory): string {
-  return c.nameShort ?? c.name;
-}

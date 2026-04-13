@@ -6,15 +6,14 @@ import {
   DESCRIPTION_MAX_BY_PACKAGE,
   DESCRIPTION_MAX_ABS,
 } from "@/lib/listing-constants";
+import { useLocale } from "@/components/locale-provider";
 
 const PACKAGES = Object.keys(DESCRIPTION_MAX_BY_PACKAGE) as ListingPackage[];
 
 type Props = {
-  /** Ако е поставено, лимитот следи фиксен пакет (нема select). */
   fixedPackage?: ListingPackage;
   packageSelectId?: string;
   rows?: number;
-  /** За уредување на постоечки оглас. */
   defaultValue?: string;
 };
 
@@ -24,6 +23,10 @@ export function DescriptionWithPackageLimit({
   rows = 4,
   defaultValue = "",
 }: Props) {
+  const { locale, t } = useLocale();
+  const dl = t.ui.descriptionLimit;
+  const numLoc = locale === "en" ? "en-GB" : "mk-MK";
+
   const [pkg, setPkg] = useState<ListingPackage>(fixedPackage ?? "free");
   const [len, setLen] = useState(() => defaultValue.length);
 
@@ -64,13 +67,11 @@ export function DescriptionWithPackageLimit({
         aria-invalid={over}
       />
       <p className="mt-1 text-xs text-slate-500">
-        За избраниот пакет: најмногу{" "}
-        <strong>{max.toLocaleString("mk-MK")}</strong> карактери (моментално{" "}
-        {len.toLocaleString("mk-MK")}
+        {dl.beforeCount}{" "}
+        <strong>{max.toLocaleString(numLoc)}</strong> {dl.betweenMaxAndLen}{" "}
+        {len.toLocaleString(numLoc)}
         {over ? (
-          <span className="text-amber-700">
-            {" "}
-            — намалете го текстот пред зачувување.          </span>
+          <span className="text-amber-700"> {dl.shorten}</span>
         ) : null}
         ).
       </p>

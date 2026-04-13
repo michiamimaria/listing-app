@@ -1,14 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans } from "next/font/google";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { Providers } from "@/app/providers";
+import { Suspense } from "react";
+import { AuthReadyShell } from "@/components/auth-ready-shell";
+import { AppShell } from "@/components/app-shell";
+import { getServerLocale } from "@/lib/i18n/locale";
+import { messages } from "@/lib/i18n/messages";
 import "./globals.css";
-
-const notoSans = Noto_Sans({
-  variable: "--font-noto",
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
-});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -16,28 +12,44 @@ export const viewport: Viewport = {
   themeColor: "#f8fafc",
 };
 
-export const metadata: Metadata = {
-  title: {
-    default: "listaj.mk — бизнис директориум за Македонија",
-    template: "%s · listaj.mk",
-  },
-  description:
-    "Најди и листај локални бизниси во Македонија. Пребарување по категорија, град, име или услуга. Бесплатни и премиум огласи.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  const m = messages[locale].meta;
+  return {
+    title: {
+      default: m.titleDefault,
+      template: m.titleTemplate,
+    },
+    description: m.description,
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getServerLocale();
+
   return (
-    <html lang="mk" className={`${notoSans.variable} h-full antialiased`}>
-      <body className="flex min-h-full min-w-0 flex-col bg-slate-50 font-sans text-slate-900">
-        <SiteHeader />
-        <Providers>
-          <div className="min-w-0 flex-1 overflow-x-hidden">{children}</div>
-        </Providers>
-        <SiteFooter />
+    <html lang={locale === "en" ? "en" : "mk"} className="h-full antialiased">
+      <body
+        className="flex min-h-full min-w-0 flex-col bg-slate-50 font-sans text-slate-900"
+        style={{
+          backgroundColor: "#f8fafc",
+          minHeight: "100dvh",
+          color: "#0f172a",
+        }}
+      >
+        <Suspense
+          fallback={
+            <AppShell initialLocale={locale} session={null}>
+              {children}
+            </AppShell>
+          }
+        >
+          <AuthReadyShell initialLocale={locale}>{children}</AuthReadyShell>
+        </Suspense>
       </body>
     </html>
   );

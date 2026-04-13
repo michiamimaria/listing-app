@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useLocale } from "@/components/locale-provider";
 import {
   isStripePackageKey,
   STRIPE_PACKAGE_KEYS,
@@ -68,11 +69,16 @@ type Props = {
 };
 
 export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
+  const { locale, t } = useLocale();
+  const tp = t.payment;
   const backHref = redirectAfter === "paketi" ? "/paketi" : "/dodaj-biznis";
   const [selectedPkg, setSelectedPkg] = useState<StripePackageKey>("premium3");
   const [payWith, setPayWith] = useState<PayChannel>("card");
 
   const def = STRIPE_PACKAGES[selectedPkg];
+  const locPkg = t.stripePkg[selectedPkg];
+  const expPh =
+    locale === "mk" ? tp.expiryPlaceholderMk : tp.expiryPlaceholderEn;
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
@@ -81,15 +87,16 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
           href={backHref}
           className="text-xs font-medium text-slate-500 hover:text-slate-800"
         >
-          ← Откажи
+          {tp.cancel}
         </Link>
       </div>
 
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] text-slate-600 sm:text-sm">Плати кон</p>
+          <p className="text-[13px] text-slate-600 sm:text-sm">{tp.payTo}</p>
           <p className="mt-0.5 text-base font-semibold text-slate-900 sm:text-lg">
-            listaj<span className="text-emerald-600">.mk</span>
+            {t.brandPrefix}
+            <span className="text-emerald-600">.mk</span>
           </p>
         </div>
         <CardBrandMarks />
@@ -98,9 +105,11 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
       <div className="border-b border-slate-100 px-4 py-4 sm:px-5">
         <p className="text-3xl font-bold tabular-nums text-emerald-800">
           {def.amountMkd}{" "}
-          <span className="text-lg font-normal text-slate-600">ден</span>
+          <span className="text-lg font-normal text-slate-600">
+            {tp.currency}
+          </span>
         </p>
-        <p className="mt-1 text-sm text-slate-600">{def.monthlyHint}</p>
+        <p className="mt-1 text-sm text-slate-600">{locPkg.monthlyHint}</p>
       </div>
 
       <div className="space-y-4 px-4 py-5 sm:space-y-5 sm:px-5">
@@ -109,7 +118,7 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
             htmlFor="payPackage"
             className="mb-1 block text-xs font-medium text-slate-600"
           >
-            Пакет
+            {tp.packageLabel}
           </label>
           <select
             id="payPackage"
@@ -123,9 +132,10 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
           >
             {STRIPE_PACKAGE_KEYS.map((key) => {
               const p = STRIPE_PACKAGES[key];
+              const badge = t.stripePkg[key].badge;
               return (
                 <option key={key} value={key}>
-                  {p.badge} — {p.amountMkd} ден
+                  {badge} — {p.amountMkd} {tp.currency}
                 </option>
               );
             })}
@@ -137,12 +147,12 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
             htmlFor="payDesc"
             className="mb-1 block text-xs font-medium text-slate-600"
           >
-            Опис
+            {tp.descriptionLabel}
           </label>
           <input
             id="payDesc"
             autoComplete="off"
-            defaultValue="Премиум пакет за оглас"
+            defaultValue={tp.descriptionDefault}
             className="min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none ring-slate-300 focus:ring-2 sm:min-h-0"
           />
         </div>
@@ -152,14 +162,14 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
             htmlFor="payEmail"
             className="mb-1 block text-xs font-medium text-slate-600"
           >
-            Е-пошта
+            {tp.emailLabel}
           </label>
           <input
             id="payEmail"
             type="email"
             autoComplete="email"
             defaultValue={userEmail ?? ""}
-            placeholder="ime@пример.mk"
+            placeholder={tp.emailPlaceholder}
             className="min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none ring-slate-300 focus:ring-2 sm:min-h-0"
           />
         </div>
@@ -168,7 +178,7 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
 
         <fieldset>
           <legend className="mb-2 block text-xs font-medium text-slate-600">
-            Плати со
+            {tp.payWith}
           </legend>
           <div className="space-y-2 rounded-lg border border-slate-200 p-2">
             <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2.5 hover:bg-slate-50 has-[:checked]:bg-emerald-50/60">
@@ -180,7 +190,7 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
                 className="h-4 w-4 border-slate-300 text-emerald-600"
               />
               <span className="min-w-0 flex-1 text-sm text-slate-800">
-                Кредитна / дебитна картичка
+                {tp.cardOption}
               </span>
             </label>
             <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2.5 hover:bg-slate-50 has-[:checked]:bg-emerald-50/60">
@@ -191,7 +201,9 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
                 onChange={() => setPayWith("apple")}
                 className="h-4 w-4 border-slate-300 text-emerald-600"
               />
-              <span className="min-w-0 flex-1 text-sm text-slate-800">Apple Pay</span>
+              <span className="min-w-0 flex-1 text-sm text-slate-800">
+                Apple Pay
+              </span>
               <ApplePayBadge />
             </label>
             <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2.5 hover:bg-slate-50 has-[:checked]:bg-emerald-50/60">
@@ -202,7 +214,9 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
                 onChange={() => setPayWith("google")}
                 className="h-4 w-4 border-slate-300 text-emerald-600"
               />
-              <span className="min-w-0 flex-1 text-sm text-slate-800">Google Pay</span>
+              <span className="min-w-0 flex-1 text-sm text-slate-800">
+                Google Pay
+              </span>
               <GooglePayBadge />
             </label>
             <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2.5 hover:bg-slate-50 has-[:checked]:bg-emerald-50/60">
@@ -213,7 +227,9 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
                 onChange={() => setPayWith("payoneer")}
                 className="h-4 w-4 border-slate-300 text-emerald-600"
               />
-              <span className="min-w-0 flex-1 text-sm text-slate-800">Payoneer</span>
+              <span className="min-w-0 flex-1 text-sm text-slate-800">
+                Payoneer
+              </span>
               <PayoneerBadge />
             </label>
           </div>
@@ -226,24 +242,24 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
                 htmlFor="cardHolder"
                 className="mb-1 block text-xs font-medium text-slate-600"
               >
-                Име на картичка
+                {tp.cardHolder}
               </label>
               <input
                 id="cardHolder"
                 autoComplete="off"
-                placeholder="Име Презиме"
+                placeholder={tp.cardHolderPlaceholder}
                 className="min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none ring-slate-300 focus:ring-2 sm:min-h-0"
               />
             </div>
 
             <div>
               <span className="mb-1 block text-xs font-medium text-slate-600">
-                Податоци од картичка
+                {tp.cardDetails}
               </span>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
                 <div className="min-w-0 flex-1">
                   <label htmlFor="cardPan" className="sr-only">
-                    Број на картичка
+                    {tp.cardNumber}
                   </label>
                   <input
                     id="cardPan"
@@ -255,22 +271,22 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:w-[11.5rem] sm:shrink-0">
                   <label htmlFor="cardExp" className="sr-only">
-                    Валидност
+                    {tp.expiry}
                   </label>
                   <input
                     id="cardExp"
                     autoComplete="off"
-                    placeholder="MM/ГГ"
+                    placeholder={expPh}
                     className="min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none ring-slate-300 focus:ring-2 sm:min-h-0"
                   />
                   <label htmlFor="cardCvc" className="sr-only">
-                    CVC
+                    {tp.cvc}
                   </label>
                   <input
                     id="cardCvc"
                     inputMode="numeric"
                     autoComplete="off"
-                    placeholder="CVC"
+                    placeholder={tp.cvc}
                     className="min-h-[44px] w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none ring-slate-300 focus:ring-2 sm:min-h-0"
                   />
                 </div>
@@ -280,10 +296,10 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
         ) : (
           <p className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
             {payWith === "apple"
-              ? "Потврда преку Apple Pay — без внесување податоци од картичка овде."
+              ? tp.appleNote
               : payWith === "google"
-                ? "Потврда преку Google Pay — без внесување податоци од картичка овде."
-                : "Потврда преку Payoneer — без внесување податоци од картичка овде."}
+                ? tp.googleNote
+                : tp.payoneerNote}
           </p>
         )}
 
@@ -292,12 +308,12 @@ export function PaymentMethodPicker({ redirectAfter, userEmail }: Props) {
           className="min-h-[48px] w-full rounded-lg bg-[#c41e3a] py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-[#a01830] active:bg-[#8a1429] sm:min-h-[52px] sm:text-base"
         >
           {payWith === "card"
-            ? "Плати сега"
+            ? tp.payNow
             : payWith === "apple"
-              ? "Плати со Apple Pay"
+              ? tp.payApple
               : payWith === "google"
-                ? "Плати со Google Pay"
-                : "Плати со Payoneer"}
+                ? tp.payGoogle
+                : tp.payPayoneer}
         </button>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import { hasStripeSecretKey } from "@/lib/stripe";
 
 /**
- * Без таен клуч за плаќање: понуди едноставна форма за активирање (локално / демо).
- * Со конфигуриран клуч се користи страница за плаќање со картичка.
+ * Without a payment secret key: offer a simple activation form (local / demo).
+ * With a configured key, the card checkout flow is used.
  */
 export function canUseSimplePremiumForm(): boolean {
   return !hasStripeSecretKey();

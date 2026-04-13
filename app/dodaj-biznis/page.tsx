@@ -3,6 +3,12 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { MAIN_CATEGORIES } from "@/data/categories";
 import { getCityFilterGroups } from "@/lib/business-queries";
+import {
+  categoryLabelForHome,
+  subcategoryLabel,
+} from "@/lib/i18n/category-labels";
+import { getServerLocale } from "@/lib/i18n/locale";
+import { messages } from "@/lib/i18n/messages";
 import { getActivePremiumPackageKeys } from "@/lib/payment-service";
 import { isCardlessDevPaymentMode, isStripeConfigured } from "@/lib/stripe";
 import { canUseSimplePremiumForm } from "@/lib/simple-premium-form";
@@ -10,21 +16,13 @@ import { DemoPremiumPackageForm } from "@/components/DemoPremiumPackageForm";
 import { DodajBiznisPremiumPay } from "@/components/DodajBiznisPremiumPay";
 import { ListingFormSection } from "./listing-form-section";
 
-export const metadata: Metadata = {
-  title: "Додај бизнис",
-  description:
-    "Креирај профил на listaj.mk — категорија, локација, контакт, веб, опис и слики.",
-};
-
-/** Свежа server-action мапа по барање (избегнува stale action id по HMR). */
 export const dynamic = "force-dynamic";
 
-const categoryOptions = MAIN_CATEGORIES.map((c) => ({
-  slug: c.slug,
-  emoji: c.emoji,
-  name: c.nameShort ?? c.name,
-  subcategories: c.subcategories,
-}));
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  const ab = messages[locale].ui.addBusiness;
+  return { title: ab.metaTitle, description: ab.metaDescription };
+}
 
 type Props = {
   searchParams: Promise<{
@@ -32,13 +30,26 @@ type Props = {
     err?: string;
     mode?: string;
     otkazano?: string;
-    /** Симулирано / тест плаќање завршено — прикажи потврда. */
     plati?: string;
   }>;
 };
 
 export default async function AddBusinessPage({ searchParams }: Props) {
   const sp = await searchParams;
+  const locale = await getServerLocale();
+  const ab = messages[locale].ui.addBusiness;
+  const nav = messages[locale].nav;
+
+  const categoryOptions = MAIN_CATEGORIES.map((c) => ({
+    slug: c.slug,
+    emoji: c.emoji,
+    name: categoryLabelForHome(c, locale),
+    subcategories: c.subcategories.map((s) => ({
+      slug: s.slug,
+      name: subcategoryLabel(s, locale),
+    })),
+  }));
+
   const session = await auth();
   const cityGroups = await getCityFilterGroups();
 
@@ -49,7 +60,6 @@ export default async function AddBusinessPage({ searchParams }: Props) {
   const forceBasic = sp.mode === "basic";
   const showPremiumForm =
     Boolean(session?.user) && activePremium.length > 0 && !forceBasic;
-  /** Најавен без пакет: прво плаќање на /dodaj-biznis, потоа премиум форма (не мешај со бесплатна). */
   const payFirstBeforePremiumForm =
     Boolean(session?.user) && activePremium.length === 0 && !forceBasic;
   const defaultPremium = activePremium[0] ?? "premium3";
@@ -61,50 +71,44 @@ export default async function AddBusinessPage({ searchParams }: Props) {
     <main className="mx-auto w-full min-w-0 max-w-2xl px-3 py-8 sm:px-6 sm:py-10">
       <nav className="text-sm text-slate-500">
         <Link href="/" className="hover:text-emerald-700">
-          Почетна
+          {messages[locale].ui.common.home}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-800">Додај бизнис</span>
+        <span className="text-slate-800">{ab.breadcrumb}</span>
       </nav>
 
       {showPremiumForm ? (
         <>
           <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Премиум оглас
+            {ab.premiumH1}
           </h1>
-          <p className="mt-2 text-sm text-slate-600 sm:text-base">
-            Користи го активниот пакет: подолг опис, повеќе слики и веб-адреса.
-          </p>
+          <p className="mt-2 text-sm text-slate-600 sm:text-base">{ab.premiumIntro}</p>
         </>
       ) : payFirstBeforePremiumForm ? (
         <>
           <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Премиум оглас
+            {ab.premiumH1}
           </h1>
           <p className="mt-2 text-sm text-slate-600 sm:text-base">
-            <span className="font-semibold text-emerald-900">Чекор 1:</span>{" "}
+            <span className="font-semibold text-emerald-900">{ab.step1Title}</span>{" "}
             {simplePremiumForm
-              ? "пополни ја формата подолу и активирај пакет (без картичка)."
+              ? ab.step1Simple
               : simulateCardlessPayment
-                ? "избери пакет подолу (тест без картичка)."
-                : "плати пакет подолу со картичка (безбедна страница)."}{" "}
-            <span className="font-semibold text-emerald-900">Чекор 2:</span> врати
-            се на оваа страница — ќе се појави формата за премиум оглас.
+                ? ab.step1Simulate
+                : ab.step1Card}{" "}
+            <span className="font-semibold text-emerald-900">{ab.step2Title}</span>{" "}
+            {ab.step2}
           </p>
         </>
       ) : (
         <>
           <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Додај бизнис
+            {ab.basicH1}
           </h1>
           <p className="mt-2 text-sm text-slate-600 sm:text-base">
-            Категорија, локација, контакт и краток опис. За веб и проширен
-            профил има{" "}
-            <Link
-              href="/paketi"
-              className="font-medium text-emerald-700 underline"
-            >
-              премиум пакети
+            {ab.basicIntro}{" "}
+            <Link href="/paketi" className="font-medium text-emerald-700 underline">
+              {ab.premiumLink}
             </Link>
             .
           </p>
@@ -113,19 +117,19 @@ export default async function AddBusinessPage({ searchParams }: Props) {
 
       {!session?.user ? (
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <p className="font-medium">Најави се за да зачуваш оглас</p>
+          <p className="font-medium">{ab.signInToSave}</p>
           <p className="mt-1 text-amber-900/90">
-            Немаш сметка?{" "}
+            {ab.noAccount}{" "}
             <Link href="/registracija" className="font-semibold underline">
-              Регистрирај се
+              {ab.register}
             </Link>
-            , потоа пополни ја формата.
+            {ab.thenFill}
           </p>
           <Link
             href={`/prijava?callbackUrl=${encodeURIComponent("/dodaj-biznis")}`}
             className="mt-3 inline-flex rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
           >
-            Најави се
+            {ab.signIn}
           </Link>
         </div>
       ) : null}
@@ -133,9 +137,9 @@ export default async function AddBusinessPage({ searchParams }: Props) {
       {session?.user && activePremium.length > 0 && forceBasic ? (
         <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
           <p>
-            Имаш активен премиум. За подолг опис и повеке слики отвори ја{" "}
+            {ab.hasPremiumUseForm}{" "}
             <Link href="/dodaj-biznis" className="font-semibold underline">
-              премиум формата
+              {ab.premiumFormLink}
             </Link>
             .
           </p>
@@ -155,26 +159,14 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           )}
           {payFirstBeforePremiumForm ? (
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
-              <p className="font-medium text-slate-900">По успешно плаќање</p>
+              <p className="font-medium text-slate-900">{ab.afterPayTitle}</p>
               <p className="mt-1">
                 {simplePremiumForm ? (
-                  <>
-                    По „Активирај пакет“ освежи ја страницата — премиум формата се
-                    појавува веднаш.
-                  </>
+                  ab.afterPaySimple
                 ) : (
                   <>
-                    Освежи ја страницата (или отвори повторно „Додај бизнис“) —
-                    премиум формата се појавува автоматски.
-                    {simulateCardlessPayment ? (
-                      <> На локален тест нема форма за картичка.</>
-                    ) : (
-                      <>
-                        {" "}
-                        Ако се отвори нова страница за плаќање, затвори ја пред да
-                        освежиш.
-                      </>
-                    )}
+                    {ab.afterPayStripe}
+                    {simulateCardlessPayment ? ab.afterPaySimulate : ab.afterPayCloseTab}
                   </>
                 )}
               </p>
@@ -183,28 +175,23 @@ export default async function AddBusinessPage({ searchParams }: Props) {
                   href="/dodaj-biznis?mode=basic"
                   className="font-semibold text-emerald-800 underline hover:text-emerald-950"
                 >
-                  Објави бесплатен оглас наместо премиум
+                  {ab.freeInstead}
                 </Link>
-                <span className="text-slate-500">
-                  {" "}
-                  — една слика, пократок опис, без веб.
-                </span>
+                <span className="text-slate-500"> {ab.freeInsteadHint}</span>
               </p>
             </div>
           ) : null}
         </div>
       ) : null}
 
-
       {sp.otkazano ? (
         <p
           className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
           role="status"
         >
-          Плаќањето е откажано. Можеш да пробаш повторно со копчињата погоре или
-          на{" "}
+          {ab.paymentCancelled}{" "}
           <Link href="/paketi" className="font-semibold underline">
-            Пакети
+            {nav.packages}
           </Link>
           .
         </p>
@@ -216,17 +203,11 @@ export default async function AddBusinessPage({ searchParams }: Props) {
             className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
             role="status"
           >
-            Пакетот е активен.
-            {simplePremiumForm || simulateCardlessPayment
-              ? " (без картичка.)"
-              : ""}{" "}
-            Пополни го
-            премиум огласот подолу.{" "}
-            <Link
-              href="/dodaj-biznis"
-              className="font-semibold text-emerald-800 underline"
-            >
-              Исчисти ја адресата
+            {ab.pkgActive}
+            {simplePremiumForm || simulateCardlessPayment ? ab.noCardSuffix : ""}{" "}
+            {ab.fillPremium}{" "}
+            <Link href="/dodaj-biznis" className="font-semibold text-emerald-800 underline">
+              {ab.clearUrl}
             </Link>
           </p>
         ) : (
@@ -234,8 +215,7 @@ export default async function AddBusinessPage({ searchParams }: Props) {
             className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
             role="status"
           >
-            Не гледаме активен пакет. Освежи ја страницата или најави се со истата
-            сметка со која го кликна копчето.
+            {ab.noActivePkg}
           </p>
         )
       ) : null}
@@ -245,8 +225,7 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
           role="status"
         >
-          Огласот е зачуван. ќе се појави на почетната страна и во избраната
-          категорија.
+          {ab.listingSaved}
           {session?.user ? (
             <>
               {" "}
@@ -254,9 +233,9 @@ export default async function AddBusinessPage({ searchParams }: Props) {
                 href="/moi-oglasi"
                 className="font-semibold text-emerald-800 underline hover:text-emerald-950"
               >
-                Мои огласи
+                {ab.myListings}
               </Link>{" "}
-              — уреди или избриши подоцна.
+              {ab.savedAfterMyListings}
             </>
           ) : null}
         </p>
@@ -266,7 +245,7 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
           role="alert"
         >
-          Пополни ги име на бизнис, категорија, подкатегорија, град и телефон.
+          {ab.errMissing}
         </p>
       ) : null}
       {sp.err === "subcategory" ? (
@@ -274,7 +253,7 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
           role="alert"
         >
-          Подкатегоријата не одговара на избраната категорија.
+          {ab.errSub}
         </p>
       ) : null}
       {sp.err === "package" ? (
@@ -282,11 +261,11 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
           role="alert"
         >
-          За избраниот премиум пакет треба успешно плаќање. Отвори{" "}
+          {ab.errPackageBefore}
           <Link href="/paketi" className="font-semibold underline">
-            Пакети
-          </Link>{" "}
-          и заврши го пла��ањето, потоа повтори го поднесувањето.
+            {nav.packages}
+          </Link>
+          {ab.errPackageAfter}
         </p>
       ) : null}
       {sp.err === "demo" ? (
@@ -294,8 +273,7 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
           role="alert"
         >
-          Оваа опција за активирање не е достапно со тековната конфигурација на
-          серверот. Користи пла��ање со картичка или контактирај админ.
+          {ab.errDemo}
         </p>
       ) : null}
       {sp.err === "desc" ? (
@@ -303,8 +281,7 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
           role="alert"
         >
-          Описот е подолг од дозволеното за избраниот пакет. Провери го лимитот
-          под полето или избери поголем пакет.
+          {ab.errDesc}
         </p>
       ) : null}
       {sp.err === "db" ? (
@@ -312,8 +289,9 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
           role="alert"
         >
-          Грешка при зачувување. Провери дали базата е креирана (
-          <code className="rounded bg-red-100 px-1">npx prisma db push</code>).
+          {ab.errDbBefore}
+          <code className="rounded bg-red-100 px-1">npx prisma db push</code>
+          {ab.errDbAfter}
         </p>
       ) : null}
 
@@ -324,6 +302,8 @@ export default async function AddBusinessPage({ searchParams }: Props) {
           categoryOptions={categoryOptions}
           activePremium={activePremium}
           defaultPremium={defaultPremium}
+          ui={messages[locale].ui}
+          locale={locale}
         />
       ) : null}
     </main>

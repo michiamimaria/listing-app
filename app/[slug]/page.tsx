@@ -7,6 +7,13 @@ import {
   filterBusinessesInCategory,
   getCityFilterGroups,
 } from "@/lib/business-queries";
+import {
+  mainCategoryLabel,
+  subcategoryLabel,
+} from "@/lib/i18n/category-labels";
+import { getServerLocale } from "@/lib/i18n/locale";
+import { cityLabelForLocale } from "@/lib/i18n/mk-city-latin";
+import { messages } from "@/lib/i18n/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -25,21 +32,32 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const locale = await getServerLocale();
   const { slug } = await params;
   const cat = CATEGORY_BY_SLUG.get(slug);
-  if (!cat) return { title: "Не е пронајдено" };
+  const cp = messages[locale].ui.categoryPage;
+  if (!cat) return { title: cp.notFoundTitle };
+  const name = mainCategoryLabel(cat, locale);
   return {
-    title: `${cat.name} — огласи`,
-    description: `Пребарај ${cat.name.toLowerCase()} во Македонија. Филтри по град, оцена и цена.`,
+    title: `${name} — ${cp.metaListingsSuffix}`,
+    description: cp.metaDescription(name),
   };
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
+  const locale = await getServerLocale();
+  const ui = messages[locale].ui;
+  const cp = ui.categoryPage;
+  const ch = ui.common.home;
+  const cityLabels = ui.cityGroups;
+
   const { slug } = await params;
   const sp = await searchParams;
 
   const category = CATEGORY_BY_SLUG.get(slug);
   if (!category) notFound();
+
+  const categoryTitle = mainCategoryLabel(category, locale);
 
   const sub =
     sp.sub && sp.sub !== "" && sp.sub !== "all" ? sp.sub : "all";
@@ -50,7 +68,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const priceTier =
     sp.price && sp.price !== "" ? Number(sp.price) : 0;
 
-  const filtered = await filterBusinessesInCategory(slug, {
+  const filtered = await filterBusinessesInCategory(slug, locale, {
     subcategorySlug: sub === "all" ? undefined : sub,
     city: city === "all" ? undefined : city,
     minRating: minRating > 0 ? minRating : undefined,
@@ -59,16 +77,23 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   const cityGroups = await getCityFilterGroups();
 
-  const listingWord = filtered.length === 1 ? "оглас" : "огласи";
+  const listingWord =
+    filtered.length === 1 ? cp.listingOne : cp.listingMany;
+
+  const subName =
+    sub !== "all"
+      ? category.subcategories.find((x) => x.slug === sub)
+      : undefined;
+  const subDisplay = subName ? subcategoryLabel(subName, locale) : "";
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-6xl px-3 py-8 sm:px-6 sm:py-10">
       <nav className="text-sm text-slate-500">
         <Link href="/" className="hover:text-emerald-700">
-          Почетна
+          {ch}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-800">{category.name}</span>
+        <span className="text-slate-800">{categoryTitle}</span>
       </nav>
 
       <header className="mt-4 border-b border-slate-200 pb-6 sm:pb-8">
@@ -76,19 +101,18 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           {category.emoji}
         </p>
         <h1 className="mt-2 break-words text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-          {category.name}
+          {categoryTitle}
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">
-          Огласи во оваа категорија. Користи филтри за град, минимална оцена и
-          ниво на цена. Пример на адреса:{" "}
+          {cp.intro(slug)}{" "}
           <code className="break-all rounded bg-slate-100 px-1.5 py-0.5 text-xs sm:text-sm">
-            listaj.mk/{slug}
+            {messages[locale].brandPrefix}.mk/{slug}
           </code>
         </p>
       </header>
 
       <div className="mt-8 min-w-0">
-        <h2 className="text-sm font-medium text-slate-700">Подкатегории</h2>
+        <h2 className="text-sm font-medium text-slate-700">{cp.subcategories}</h2>
         <div className="mt-3 flex max-w-full gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
           <Link
             href={`/${slug}`}
@@ -98,7 +122,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
-            Сите
+            {cp.all}
           </Link>
           {category.subcategories.map((s) => (
             <Link
@@ -110,7 +134,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              {s.name}
+              {subcategoryLabel(s, locale)}
             </Link>
           ))}
         </div>
@@ -126,7 +150,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         ) : null}
         <div>
           <label htmlFor="city" className="block text-xs font-medium text-slate-500">
-            Град
+            {cp.city}
           </label>
           <select
             id="city"
@@ -134,12 +158,12 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             defaultValue={city}
             className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
-            <option value="all">Сите градови</option>
+            <option value="all">{cp.allCities}</option>
             {cityGroups.map((g) => (
-              <optgroup key={g.label} label={g.label}>
+              <optgroup key={g.id} label={cityLabels[g.id]}>
                 {g.cities.map((c) => (
-                  <option key={`${g.label}-${c}`} value={c}>
-                    {c}
+                  <option key={`${g.id}-${c}`} value={c}>
+                    {cityLabelForLocale(c, locale)}
                   </option>
                 ))}
               </optgroup>
@@ -148,7 +172,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </div>
         <div>
           <label htmlFor="rating" className="block text-xs font-medium text-slate-500">
-            Минимална оцена
+            {cp.minRating}
           </label>
           <select
             id="rating"
@@ -156,7 +180,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             defaultValue={minRating > 0 ? String(minRating) : ""}
             className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
-            <option value="">Било која</option>
+            <option value="">{cp.anyRating}</option>
             <option value="3">3+</option>
             <option value="4">4+</option>
             <option value="4.5">4,5+</option>
@@ -164,7 +188,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </div>
         <div>
           <label htmlFor="price" className="block text-xs font-medium text-slate-500">
-            Цена
+            {cp.price}
           </label>
           <select
             id="price"
@@ -172,10 +196,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             defaultValue={priceTier > 0 ? String(priceTier) : ""}
             className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
-            <option value="">Било која</option>
-            <option value="1">Ниско ниво</option>
-            <option value="2">Средно ниво</option>
-            <option value="3">Високо ниво</option>
+            <option value="">{cp.anyPrice}</option>
+            <option value="1">{cp.priceLow}</option>
+            <option value="2">{cp.priceMid}</option>
+            <option value="3">{cp.priceHigh}</option>
           </select>
         </div>
         <div className="flex items-end gap-2">
@@ -183,16 +207,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             type="submit"
             className="h-10 w-full rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
           >
-            Примени филтри
+            {cp.applyFilters}
           </button>
         </div>
       </form>
 
       <p className="mt-6 text-sm text-slate-600">
         {filtered.length} {listingWord}
-        {sub !== "all"
-          ? ` · ${category.subcategories.find((x) => x.slug === sub)?.name}`
-          : ""}
+        {sub !== "all" ? ` · ${subDisplay}` : ""}
       </p>
 
       <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -205,13 +227,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
       {filtered.length === 0 ? (
         <p className="mt-8 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
-          Нема бизниси што одговараат на филтрите.{" "}
+          {cp.emptyFilters}{" "}
           <Link href={`/${slug}`} className="font-medium text-emerald-700">
-            Исчисти филтри
+            {cp.clearFilters}
           </Link>{" "}
-          или{" "}
+          {cp.filterOr}{" "}
           <Link href="/dodaj-biznis" className="font-medium text-emerald-700">
-            додај оглас
+            {cp.addListing}
           </Link>
           .
         </p>

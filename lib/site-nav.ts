@@ -1,8 +1,10 @@
-/** Линкови за главна навигација (десктоп + мобилно мени). */
+/** Линкови за главна навигација (десктоп + мобилно мени). Лабелите се во lib/i18n/messages.ts. */
 export const SITE_NAV = [
-  { href: "/", label: "Почетна" },
-  { href: "/kategorii", label: "Категории" },
-  { href: "/paketi", label: "Пакети" },
-  { href: "/moi-oglasi", label: "Мои огласи" },
-  { href: "/dodaj-biznis", label: "Додај бизнис" },
+  { href: "/", key: "home" },
+  { href: "/kategorii", key: "categories" },
+  { href: "/paketi", key: "packages" },
+  { href: "/moi-oglasi", key: "myListings" },
+  { href: "/dodaj-biznis", key: "addBusiness" },
 ] as const;
+
+export type SiteNavKey = (typeof SITE_NAV)[number]["key"];

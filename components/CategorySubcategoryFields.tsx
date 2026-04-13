@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale } from "@/components/locale-provider";
 
 export type CategoryOption = {
   slug: string;
@@ -20,6 +21,8 @@ export function CategorySubcategoryFields({
   defaultCategorySlug = "",
   defaultSubcategorySlug = "",
 }: Props) {
+  const { t } = useLocale();
+  const cf = t.ui.categoryFields;
   const [catSlug, setCatSlug] = useState(defaultCategorySlug);
   const subs = useMemo(
     () => categories.find((c) => c.slug === catSlug)?.subcategories ?? [],
@@ -48,7 +51,7 @@ export function CategorySubcategoryFields({
           htmlFor="categorySlug"
           className="block text-sm font-medium text-slate-700"
         >
-          Категорија
+          {cf.category}
         </label>
         <select
           id="categorySlug"
@@ -62,7 +65,7 @@ export function CategorySubcategoryFields({
           className="mt-1 min-h-[44px] w-full min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-sm sm:min-h-0"
         >
           <option value="" disabled>
-            Избери категорија
+            {cf.selectCategory}
           </option>
           {categories.map((c) => (
             <option key={c.slug} value={c.slug}>
@@ -77,7 +80,7 @@ export function CategorySubcategoryFields({
           htmlFor="subcategorySlug"
           className="block text-sm font-medium text-slate-700"
         >
-          Подкатегорија
+          {cf.subcategory}
         </label>
         <select
           id="subcategorySlug"
@@ -89,7 +92,7 @@ export function CategorySubcategoryFields({
           className="mt-1 min-h-[44px] w-full min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-100 sm:min-h-0"
         >
           {!catSlug ? (
-            <option value="">Прво избери категорија</option>
+            <option value="">{cf.selectSubFirst}</option>
           ) : (
             subs.map((s) => (
               <option key={s.slug} value={s.slug}>
