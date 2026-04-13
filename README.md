@@ -4,6 +4,12 @@
 
 Изградено со [Next.js](https://nextjs.org) 16 (App Router), React 19, TypeScript и Tailwind CSS v4. Корисничкиот интерфејс е на **македонски**; URL-патеките се латински (на пр. `/avto-uslugi`).
 
+## English
+
+**listaj.mk** is an online directory for **listing and promoting businesses worldwide**—not only in North Macedonia. Owners publish profiles; visitors search by category, city, name, or service.
+
+Stack: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4. The product UI is **Macedonian**; routes use Latin slugs (e.g. `/avto-uslugi`).
+
 ## Функционалности
 
 - **Почетна**: пребарување, избрани категории, популарни / нови / најдобро оценети бизниси (демо податоци)
