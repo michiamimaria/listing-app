@@ -9,14 +9,20 @@ import type { Locale } from "@/lib/i18n/constants";
  */
 export async function AuthReadyShell({
   initialLocale,
+  authBaseUrl,
   children,
 }: {
   initialLocale: Locale;
+  authBaseUrl?: string;
   children: React.ReactNode;
 }) {
-  const session: Session | null = await authWithTimeout(2500);
+  const session: Session | null = await authWithTimeout(450);
   return (
-    <AppShell initialLocale={initialLocale} session={session ?? null}>
+    <AppShell
+      initialLocale={initialLocale}
+      authBaseUrl={authBaseUrl}
+      session={session ?? null}
+    >
       {children}
     </AppShell>
   );

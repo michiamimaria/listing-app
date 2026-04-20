@@ -15,14 +15,19 @@ export function AppShell({
   children,
   initialLocale,
   session,
+  authBaseUrl,
 }: {
   children: React.ReactNode;
   initialLocale: Locale;
   session: Session | null;
+  /** Same origin as the browser (Host header); avoids ClientFetchError when NEXTAUTH_URL mismatches. */
+  authBaseUrl?: string;
 }) {
   return (
     <LocaleProvider initialLocale={initialLocale}>
       <SessionProvider
+        basePath="/api/auth"
+        baseUrl={authBaseUrl}
         session={session ?? null}
         refetchInterval={0}
         refetchOnWindowFocus={false}

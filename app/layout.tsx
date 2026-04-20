@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { AuthReadyShell } from "@/components/auth-ready-shell";
 import { AppShell } from "@/components/app-shell";
-import { getServerLocale } from "@/lib/i18n/locale";
+import { getRootLayoutRequest } from "@/lib/i18n/root-request";
 import { messages } from "@/lib/i18n/messages";
 import "./globals.css";
 
@@ -13,7 +13,7 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getServerLocale();
+  const { locale } = await getRootLayoutRequest();
   const m = messages[locale].meta;
   return {
     title: {
@@ -29,7 +29,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getServerLocale();
+  const { locale, authBaseUrl } = await getRootLayoutRequest();
 
   return (
     <html lang={locale === "en" ? "en" : "mk"} className="h-full antialiased">
@@ -43,12 +43,18 @@ export default async function RootLayout({
       >
         <Suspense
           fallback={
-            <AppShell initialLocale={locale} session={null}>
+            <AppShell
+              initialLocale={locale}
+              authBaseUrl={authBaseUrl}
+              session={null}
+            >
               {children}
             </AppShell>
           }
         >
-          <AuthReadyShell initialLocale={locale}>{children}</AuthReadyShell>
+          <AuthReadyShell initialLocale={locale} authBaseUrl={authBaseUrl}>
+            {children}
+          </AuthReadyShell>
         </Suspense>
       </body>
     </html>

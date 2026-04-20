@@ -40,7 +40,8 @@ export function BusinessCard({ business, categoryHref }: Props) {
     bc.featured,
     bc.premium
   );
-  const href = categoryHref ?? `/${business.categorySlug}`;
+  const detailHref = `/oglasi/${business.id}`;
+  const categoryLink = categoryHref ?? `/${business.categorySlug}`;
 
   const imgWord =
     business.imageCount === 1 ? bc.imageOne : bc.imageMany;
@@ -62,13 +63,20 @@ export function BusinessCard({ business, categoryHref }: Props) {
         <div className="min-w-0 flex-1">
           <h3 className="break-words font-semibold text-slate-900 group-hover:text-emerald-800">
             <Link
-              href={href}
+              href={detailHref}
               className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
               {business.name}
             </Link>
           </h3>
           <p className="mt-0.5 break-words text-sm text-slate-500">
+            <Link
+              href={categoryLink}
+              className="text-emerald-700 underline-offset-2 hover:underline"
+            >
+              {bc.viewInCategory}
+            </Link>
+            {subLine || catLine ? " · " : ""}
             {subLine}
             {catLine ? ` · ${catLine}` : ""}
           </p>
@@ -107,6 +115,14 @@ export function BusinessCard({ business, categoryHref }: Props) {
       <p className="mt-3 text-xs text-slate-400">
         {business.imageCount} {imgWord}
         {business.website ? bc.websiteLink : ""}
+      </p>
+      <p className="mt-2">
+        <Link
+          href={detailHref}
+          className="text-xs font-medium text-emerald-700 underline-offset-2 hover:underline"
+        >
+          {bc.rateAndComment}
+        </Link>
       </p>
     </article>
   );

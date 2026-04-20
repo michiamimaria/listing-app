@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { listingToBusiness } from "@/lib/listing-mapper";
+import {
+  listingCardSelect,
+  listingToBusiness,
+  LISTING_NEW_MS,
+} from "@/lib/listing-mapper";
 import { publiclyVisibleListingWhere } from "@/lib/listing-visibility";
 import { MAIN_CATEGORIES } from "@/data/categories";
 import { filterBusinesses } from "@/data/businesses";
@@ -11,10 +15,13 @@ import type { Locale } from "@/lib/i18n/constants";
 import { cityLabelForLocale } from "@/lib/i18n/mk-city-latin";
 import type { Business } from "@/types/business";
 
+const card = { select: listingCardSelect } as const;
+
 export async function getAllBusinesses(locale: Locale): Promise<Business[]> {
   const rows = await prisma.listing.findMany({
     where: publiclyVisibleListingWhere(),
     orderBy: { createdAt: "desc" },
+    ...card,
   });
   return rows.map((row) => listingToBusiness(row, locale));
 }
@@ -26,6 +33,7 @@ export async function businessesInCategory(
   const rows = await prisma.listing.findMany({
     where: { AND: [{ categorySlug }, publiclyVisibleListingWhere()] },
     orderBy: { createdAt: "desc" },
+    ...card,
   });
   return rows.map((row) => listingToBusiness(row, locale));
 }
@@ -71,18 +79,22 @@ export async function popularBusinesses(
     where: publiclyVisibleListingWhere(),
     orderBy: [{ reviewCount: "desc" }, { createdAt: "desc" }],
     take: 6,
+    ...card,
   });
   return rows.map((row) => listingToBusiness(row, locale));
 }
 
 export async function newBusinesses(locale: Locale): Promise<Business[]> {
+  const since = new Date(Date.now() - LISTING_NEW_MS);
   const rows = await prisma.listing.findMany({
-    where: publiclyVisibleListingWhere(),
+    where: {
+      AND: [publiclyVisibleListingWhere(), { createdAt: { gte: since } }],
+    },
     orderBy: { createdAt: "desc" },
-    take: 24,
+    take: 6,
+    ...card,
   });
-  const mapped = rows.map((row) => listingToBusiness(row, locale));
-  return mapped.filter((b) => b.isNew).slice(0, 6);
+  return rows.map((row) => listingToBusiness(row, locale));
 }
 
 export async function topRatedBusinesses(
@@ -92,17 +104,18 @@ export async function topRatedBusinesses(
     where: publiclyVisibleListingWhere(),
     orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
     take: 6,
+    ...card,
   });
   return rows.map((row) => listingToBusiness(row, locale));
 }
 
 /** Групи за филтер/форма: МК + свет + евентуални градови само од база. */
 export async function getCityFilterGroups(): Promise<CitySelectGroup[]> {
-  const rows = await prisma.listing.findMany({
+  const grouped = await prisma.listing.groupBy({
+    by: ["city"],
     where: publiclyVisibleListingWhere(),
-    select: { city: true },
   });
-  const dbCities = rows.map((r) => r.city);
+  const dbCities = grouped.map((g) => g.city);
   return buildCitySelectGroups(dbCities);
 }
 

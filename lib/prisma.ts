@@ -8,7 +8,10 @@ function createPrismaClient(): PrismaClient {
       process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
   /** Намалува „database is locked“ / долго чекање на SQLite (често со OneDrive). */
-  void client.$executeRawUnsafe("PRAGMA busy_timeout = 20000").catch(() => {});
+  /** PRAGMA враќа ред — мора $queryRaw*, не $executeRaw (инаку SQLite грешка и блокирање). */
+  void client.$queryRawUnsafe("PRAGMA busy_timeout = 8000").catch(() => {});
+  void client.$queryRawUnsafe("PRAGMA journal_mode = WAL").catch(() => {});
+  void client.$queryRawUnsafe("PRAGMA synchronous = NORMAL").catch(() => {});
   return client;
 }
 

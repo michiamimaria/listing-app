@@ -20,6 +20,31 @@ export type UiMessages = {
     pricePrefix: string;
     priceSuffix: string;
     websiteLink: string;
+    viewInCategory: string;
+    /** Линк од картичка кон детали каде се оцена/коментар. */
+    rateAndComment: string;
+  };
+  listingDetail: {
+    metaTitle: (businessName: string) => string;
+    breadcrumbHome: string;
+    reviewsHeading: string;
+    noReviews: string;
+    yourReview: string;
+    signInToReview: string;
+    signInLink: string;
+    ratingLabel: string;
+    commentLabel: string;
+    commentPlaceholder: string;
+    submitReview: string;
+    submitting: string;
+    updateReview: string;
+    ownListingHint: string;
+    errorAuth: string;
+    errorRating: string;
+    errorNotFound: string;
+    errorOwn: string;
+    errorGeneric: string;
+    anonymous: string;
   };
   categoryFields: {
     category: string;
@@ -311,6 +336,30 @@ export const uiMessages: Record<Locale, UiMessages> = {
       pricePrefix: "Цена:",
       priceSuffix: "ниво",
       websiteLink: " · Врска до веб-страница",
+      viewInCategory: "Во категорија",
+      rateAndComment: "Оцена и коментар",
+    },
+    listingDetail: {
+      metaTitle: (name) => `${name} — оглас`,
+      breadcrumbHome: "Почетна",
+      reviewsHeading: "Оцени и коментари",
+      noReviews: "Сè уште нема јавни коментари.",
+      yourReview: "Вашата оцена",
+      signInToReview: "Најавете се за да дадете оцена или коментар.",
+      signInLink: "Најава",
+      ratingLabel: "Оцена (1–5)",
+      commentLabel: "Коментар",
+      commentPlaceholder: "Опционално…",
+      submitReview: "Испрати",
+      submitting: "Се испраќа…",
+      updateReview: "Ажурирај",
+      ownListingHint: "Не можете да оценувате сопствен оглас.",
+      errorAuth: "Мора да сте најавени.",
+      errorRating: "Изберете оцена од 1 до 5.",
+      errorNotFound: "Огласот не е достапен.",
+      errorOwn: "Не можете да го оцените сопствениот оглас.",
+      errorGeneric: "Настана грешка. Обидете се повторно.",
+      anonymous: "Корисник",
     },
     categoryFields: {
       category: "Категорија",
@@ -654,6 +703,30 @@ export const uiMessages: Record<Locale, UiMessages> = {
       pricePrefix: "Price:",
       priceSuffix: "tier",
       websiteLink: " · Website link",
+      viewInCategory: "In category",
+      rateAndComment: "Rating & comment",
+    },
+    listingDetail: {
+      metaTitle: (name) => `${name} — listing`,
+      breadcrumbHome: "Home",
+      reviewsHeading: "Ratings and comments",
+      noReviews: "No comments yet.",
+      yourReview: "Your rating",
+      signInToReview: "Sign in to leave a rating or comment.",
+      signInLink: "Sign in",
+      ratingLabel: "Rating (1–5)",
+      commentLabel: "Comment",
+      commentPlaceholder: "Optional…",
+      submitReview: "Submit",
+      submitting: "Sending…",
+      updateReview: "Update",
+      ownListingHint: "You cannot rate your own listing.",
+      errorAuth: "You must be signed in.",
+      errorRating: "Choose a rating from 1 to 5.",
+      errorNotFound: "This listing is not available.",
+      errorOwn: "You cannot rate your own listing.",
+      errorGeneric: "Something went wrong. Please try again.",
+      anonymous: "User",
     },
     categoryFields: {
       category: "Category",

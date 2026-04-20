@@ -10,13 +10,14 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String          @id @default(cuid())
+  email        String          @unique
   passwordHash String
   name         String?
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime        @default(now())
   listings     Listing[]
   payments     Payment[]
+  reviews      ListingReview[]
 }
 
 model Payment {
@@ -57,6 +58,23 @@ model Listing {
   /// За listingPackage=free: крај на бесплатниот месец; по истекот огласот не се прикажува додека нема премиум.
   freeUntil       DateTime?
   createdAt       DateTime @default(now())
+  reviews         ListingReview[]
 
   @@index([categorySlug])
+}
+
+model ListingReview {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([listingId, userId])
+  @@index([listingId])
+  @@index([userId])
 }
